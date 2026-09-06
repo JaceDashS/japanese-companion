@@ -20,7 +20,7 @@ $trigger = New-ScheduledTaskTrigger @triggerParameters
 $settingsParameters = @{
   StartWhenAvailable = $true
   WakeToRun = $true
-  ExecutionTimeLimit = New-TimeSpan -Hours 4
+  ExecutionTimeLimit = New-TimeSpan -Hours 1
 }
 $settings = New-ScheduledTaskSettingsSet @settingsParameters
 
@@ -37,7 +37,7 @@ $registrationParameters = @{
   Trigger = $trigger
   Settings = $settings
   Principal = $principal
-  Description = "Commit Japanese companion study progress fields between 03:00 and 06:00."
+  Description = "Commit Japanese companion asset study progress between 03:00 and 04:00."
   Force = $true
 }
 Register-ScheduledTask @registrationParameters | Out-Null

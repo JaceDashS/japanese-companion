@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 
 const repoRoot = path.resolve(fileURLToPath(new URL("..", import.meta.url)));
 const logPath = path.resolve(tmpdir(), "codex-japanese-companion-nightly-study-commit.log");
-const commitMessage = "study: nightly Japanese progress";
+const commitMessage = "[chore] Nightly asset progress";
 const progressKeys = new Set([
   "lastResult",
   "lastAttemptDate",
@@ -150,9 +150,9 @@ async function waitForRandomCommitTime() {
 
   const current = new Date();
   const end = new Date(current);
-  end.setHours(6, 0, 0, 0);
+  end.setHours(4, 0, 0, 0);
   if (current >= end) {
-    log("scheduled run: outside 03:00-06:00 window, skipping");
+    log("scheduled run: outside 03:00-04:00 window, skipping");
     return false;
   }
 
