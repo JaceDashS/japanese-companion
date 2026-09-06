@@ -25,19 +25,8 @@ function parseArgs(argv) {
 function isRemovalTarget(item) {
   if (!item || typeof item !== "object" || Array.isArray(item)) return false;
   const expression = item.expression;
-  if (typeof expression !== "string" || !/^[\u3041-\u3096]+$/u.test(expression)) return false;
-
-  const readingParts = item.readingParts;
-  if (!readingParts || typeof readingParts !== "object" || Array.isArray(readingParts)) return false;
-
-  const mapping = readingParts.kanjiToKana;
-  const mapped = mapping && typeof mapping === "object" && !Array.isArray(mapping)
-    ? Object.values(mapping).map(String).join("")
-    : "";
-  const sum = `${mapped}${readingParts.restKana ?? ""}`;
-  return sum === expression;
+  return typeof expression === "string" && /^[\u3041-\u3096]+$/u.test(expression);
 }
-
 function extractDays(data) {
   if (!data || typeof data !== "object" || data.format !== "combined") {
     throw new Error('Target must be a combined JSON object (format: "combined").');
