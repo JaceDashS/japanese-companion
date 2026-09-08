@@ -22,10 +22,19 @@ function parseArgs(argv) {
   return { apply, target: path.resolve(positional[0] ?? DEFAULT_TARGET) };
 }
 
+const HIRAGANA_ONLY = /^[\u3041-\u3096]+$/u;
+const KATAKANA = /\p{Script=Katakana}/u;
+const KATAKANA_MARK = /[\p{P}\p{Z}\u30FC]/u;
+
 function isRemovalTarget(item) {
   if (!item || typeof item !== "object" || Array.isArray(item)) return false;
   const expression = item.expression;
-  return typeof expression === "string" && /^[\u3041-\u3096]+$/u.test(expression);
+  if (typeof expression !== "string") return false;
+  if (HIRAGANA_ONLY.test(expression)) return true;
+
+  const chars = [...expression];
+  return chars.some((char) => KATAKANA.test(char))
+    && chars.every((char) => KATAKANA.test(char) || KATAKANA_MARK.test(char));
 }
 function extractDays(data) {
   if (!data || typeof data !== "object" || data.format !== "combined") {
