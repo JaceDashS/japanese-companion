@@ -9,6 +9,7 @@ import {
   buildReviewDue,
   type PlanRange,
 } from "./homeDashboardBuilders.ts";
+import { isFutureReviewDate } from "./studyHelpers.ts";
 import type { StudyState } from "./studyTypes.ts";
 import type { SrsSettings } from "./srsPreferences.ts";
 
@@ -50,7 +51,7 @@ export function useHomeDashboardData({
     [state.curriculum, state.learningPlan, dailyNewLearningCount, today],
   );
   const pendingLearningRows = useMemo(
-    () => learningPlanRows.filter((row) => row.stageCompleteDate !== today),
+    () => learningPlanRows.filter((row) => row.stageCompleteDate !== today && !isFutureReviewDate(row.nextReviewDate, today)),
     [learningPlanRows, today],
   );
   const debugLogs = useMemo(

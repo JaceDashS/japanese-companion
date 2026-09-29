@@ -76,6 +76,10 @@ asset/
 
 ## Item
 
+`item`은 하나의 표현 또는 한자를 학습하기 위한 최소 학습 단위다. Day의 `items` 배열에 여러 item이 들어가며, 각 item은 학습 내용·독음·메모·학습 상태와 그 item을 위한 퀴즈를 함께 가진다.
+
+`problem`은 item 자체가 아니라 item 안에 포함되는 퀴즈 데이터다. 따라서 item은 존재하지만 `problem`이 `null`이거나 누락된 상태가 있을 수 있으며, 이 경우 학습 항목은 있지만 퀴즈가 아직 없는 상태를 뜻한다.
+
 ```json
 {
   "id": "u1-i1",
@@ -104,11 +108,20 @@ asset/
 - `expression`: 학습 대상 표현
 - `reading` 또는 `readingParts`: 읽기 정보
 - `meaningKo`: 한국어 의미
-- `problem`: 퀴즈 문제, 없으면 `null`
+- `problem`: 이 item의 퀴즈 문제 객체, 없으면 `null`
 - `lastResult`: `"NEUTRAL"`, `"PASS"`, `"FAIL"`
 - `lastAttemptDate`: 마지막 시도일
 - `memoDecomposition`: 한자/표현 분석 메모
 - `memoPersonal`: 개인 메모
+
+### Item과 Problem 감사 기준
+
+- item의 `problem`이 누락되거나 `null`이면 문제 없는 item으로 분류한다.
+- `problem`이 빈 객체이거나 객체가 아니면 잘못된 문제로 분류한다.
+- 문제 객체는 비어 있지 않은 `sentence`, 4개의 서로 다른 `choices`, 보기 중 하나인 `answer`를 가져야 한다.
+- 일반 독음 문제는 `target`이 item의 `expression`과 같고 `sentence`에 해당 표현이 들어 있어야 한다.
+- `similar_expression` 문제는 별도 문제 유형이므로 `target`이 `null`일 수 있지만, 문장과 보기·정답은 유효해야 한다.
+- 이 기준은 item을 삭제하거나 수정하지 않고 감사 결과만 보고한다. 현재 감사 스크립트는 `scripts/audit-missing-problems.cjs`다.
 
 ## Problem
 

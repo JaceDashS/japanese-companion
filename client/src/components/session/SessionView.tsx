@@ -364,7 +364,7 @@ function DonePane({ goHome, session }: { goHome: () => void; session: SessionVie
           ? `오늘 복습 반영 완료 — PASS ${passed}/${reviewed}`
           : session.allPass
             ? "FAIL 없음. 복습 회차가 올라갔습니다."
-            : "FAIL 존재. 회차는 유지됩니다."}
+            : "FAIL 존재. 내일 복습으로 이동했습니다."}
       </p>
       <button type="button" className="jc-btn" data-variant="primary" onClick={goHome}>
         확인

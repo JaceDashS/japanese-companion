@@ -79,29 +79,15 @@ export function createSessionController({
 
   const finishSession = ({
     allPass,
-    failedItemIds,
     passCount,
     reviewedCount,
   }: {
     allPass?: boolean;
-    failedItemIds: string[];
     passCount: number;
     reviewedCount: number;
   }) => {
     setSession((prev) => {
       if (!prev) return prev;
-      if (failedItemIds.length > 0) {
-        return {
-          ...prev,
-          phase: "study",
-          index: 0,
-          itemIds: failedItemIds,
-          allPass,
-          passCount,
-          reviewedCount,
-          postQuizStudy: true,
-        };
-      }
       return {
         ...prev,
         phase: "done",
@@ -126,10 +112,6 @@ export function createSessionController({
 
     const passCount = Object.values(gradedMap).filter((result) => result === "PASS").length;
     const reviewedCount = Object.keys(gradedMap).length;
-    const failedItemIds = sessionItems
-      .filter((item) => gradedMap?.[item.id] === "FAIL")
-      .map((item) => item.id);
-
     const { day: nextDay, allPass } =
       session.mode === "review"
         ? applyReviewResultForDay(day, today, gradedMap)
@@ -141,7 +123,6 @@ export function createSessionController({
 
     finishSession({
       allPass,
-      failedItemIds,
       passCount,
       reviewedCount,
     });

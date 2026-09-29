@@ -85,13 +85,16 @@ combined 형식의 `asset/*.json`에서 일본어 표현의 한자 분해 메모
 
 ## problem 규칙
 
+한자 학습 커리큘럼의 item은 `expression`에 한자(Han 문자)가 하나 이상 포함되어야 한다. 히라가나·가타카나·영문·숫자·기호만으로 이루어진 표현은 독음 정비 전에 item 전체를 에셋에서 제거하고, 남은 item을 Day 안에서 다시 연속 번호로 정렬한다.
+
 ### truth 계산
 
-`truthAnswer`는 다음 우선순위로 고정한다.
+`truthAnswer`는 기존 problem의 `answer`를 무조건 신뢰하지 않고 다음 우선순위로 고정한다.
 
-1. 보존되는 입력 problem의 `answer`
+1. 명시된 `reading` 또는 검토된 수동 독음
 2. `readingParts.kanjiToKana`와 expression을 스캔해 만든 expectedAnswer
 3. 합리적으로 만든 독음
+4. 위 근거가 모두 없을 때만 기존 `answer`를 임시 보존하고 수동검토로 표시한다.
 
 `truthKanjiToKana`는 입력 `readingParts.kanjiToKana`를 최우선으로 사용한다. expression을 왼쪽에서 오른쪽으로 스캔할 때 한자는 매핑값을, 비한자는 원문 문자를 그대로 붙인다. 불일치해도 readingParts나 expression을 교정하지 않는다.
 
@@ -105,7 +108,8 @@ combined 형식의 `asset/*.json`에서 일본어 표현의 한자 분해 메모
 - answer가 choices 중 하나이며 `truthAnswer`와 같다.
 - 후리가나·독음 힌트·`読みは〜` 같은 메타 힌트가 없다.
 - 숫자·번호 표식·반복 치트 패턴이 없다.
-- `restKana`가 있으면 모든 choice가 같은 restKana로 끝나고, 오답 생성은 그 앞의 stem에서만 수행한다. 정답 독음 자체에 같은 문자열이 stem의 일부로 자연스럽게 반복되는 경우에는 입력 정답을 교정하지 않고 고정된 끝부분을 우선한다.
+- expression에 포함된 모든 연속 가나 구간(히라가나·가타카나를 정규화한 형태)은 정답과 모든 choice에서 같은 순서와 문자열로 고정한다. 오답은 한자 독음에 해당하는 가나 위치만 바꾼다. `restKana`는 매핑되지 않은 잔여 읽기를 복원할 때 참고하며, 표현 스캔 결과에 무조건 뒤에 붙이지 않는다.
+- `restKana`가 truthAnswer의 실제 끝부분인 경우에만 모든 choice에서 그 접미를 고정하고, 오답 생성은 그 앞의 stem에서만 수행한다. `restKana`가 한자 독음 사이에 삽입되는 잔여 읽기라면 expression의 가나 구간 위치를 기준으로 고정한다.
 - choice 길이가 restKana가 있으면 truthAnswer와 같고, 없으면 truthAnswer와의 길이 차이가 2 이하이다.
 
 하나라도 실패하거나 problem이 null/undefined/빈 객체이면 problem 전체를 새로 만든다. 새 problem의 `target`은 expression과 같고, sentence에는 target 원문이 들어가야 한다.
@@ -114,7 +118,9 @@ combined 형식의 `asset/*.json`에서 일본어 표현의 한자 분해 메모
 
 새 problem은 `sentence`, `target`, `choices`, `answer`만 사용한다. choices는 중복 없는 문자열 4개로 만들고 answer는 truthAnswer와 같아야 한다. 오답 3개는 truthAnswer의 1~2곳을 모라 단위로 교체·전치·삭제·삽입해 만든다.
 
-`restKana`가 있으면 오답 변형은 restKana 앞의 stemKana에서만 만들고 모든 choice 길이는 truthAnswer와 같게 한다. 정답 stem 안에 restKana와 같은 가나가 다시 나타나더라도 정답을 임의로 바꾸지 않으며, restKana 자체는 끝부분에서 고정한다. 탁점과 반탁점은 서로 다른 문자로 취급한다. 영문, 숫자, 기호, `(1)`, `1.`, `①` 같은 표식은 사용하지 않는다.
+`restKana`가 truthAnswer의 끝부분으로 확인되는 경우 오답 변형은 그 앞의 stemKana에서만 만들고 모든 choice 길이는 truthAnswer와 같게 한다. 그 외에는 expression의 고정 가나 구간을 기준으로만 변형 위치를 정한다. 정답 stem 안에 restKana와 같은 가나가 다시 나타나더라도 정답을 임의로 바꾸지 않는다. 탁점과 반탁점은 서로 다른 문자로 취급한다. 영문, 숫자, 기호, `(1)`, `1.`, `①` 같은 표식은 사용하지 않는다.
+
+한자가 포함된 표현에서만 한자 독음 위치를 변형한다. 표현에 한자가 없으면 가나가 일부라도 변형 가능한 것처럼 보이더라도 오답을 만들지 않으며, 해당 item은 커리큘럼에서 제거한다.
 
 ## 최종 검증
 
@@ -124,7 +130,8 @@ combined 형식의 `asset/*.json`에서 일본어 표현의 한자 분해 메모
 - `expression`, `meaningKo`, `readingParts`, `memoPersonal`, 학습상태·메타와 미지정 키가 같다.
 - 허용된 변경은 `memoDecomposition`과 필요 시 `problem`뿐이다.
 - 모든 memoDecomposition이 정확히 5행 Markdown 테이블이고 열이 expression의 Han 문자와 일치한다.
-- 모든 problem이 target·sentence·answer·choices·restKana 규칙을 통과한다.
+- 모든 problem이 target·sentence·answer·choices·표현 내 고정 가나·restKana 규칙을 통과한다.
+- 한자가 없는 표현의 item은 커리큘럼에 남아 있지 않다.
 - 유효했던 기존 problem은 변경되지 않았다.
 - JSON이 다시 파싱되고 `git diff --check`가 통과한다.
 

@@ -123,7 +123,10 @@ export function buildDailyLearningPlanPaths(curriculum: StudyUnit[], count: unkn
     const day = getPathDay(curriculum, path);
     if (!day) return false;
     const hasItems = day.items.filter(isQuizTarget).length > 0;
-    return hasItems && getDayStage(day) === 1 && getDayStageCompleteDate(day) !== today;
+    return hasItems
+      && getDayStage(day) === 1
+      && getDayStageCompleteDate(day) !== today
+      && !isFutureReviewDate(getDayNextReviewDate(day), today);
   });
 
   return stageOnePaths.slice(0, remainingQuota).map((path) => ({

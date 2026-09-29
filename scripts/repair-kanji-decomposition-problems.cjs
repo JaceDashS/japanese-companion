@@ -116,8 +116,135 @@ const MANUAL_READINGS = new Map(Object.entries({
   Eメール: "いーめーる",
   "アクセス（する）": "あくせすする",
   "アップ（する）": "あっぷする",
-  "アドバイス（する）": "あどばいする",
+  "アドバイス（する）": "あどばいすする",
+  流行る: "はやる",
+  相応しい: "ふさわしい",
+  受け答える: "うけこたえる",
+  "着々と": "ちゃくちゃくと",
+  "データ内": "でーたない",
+  "9時発": "くじはつ",
+  "ガラス板": "がらすばん",
+  "ビジネスマン風": "びじねすまんふう",
+  "プラスチック類": "ぷらすちっくるい",
+  "お金が絡む": "おかねがからむ",
+  "感じが悪い": "かんじがわるい",
+  "ご担当者様": "ごたんとうしゃさま",
+  "議論がかみ合わない": "ぎろんがかみあわない",
+  "上位に食い込む": "じょういにくいこむ",
+  "ハードルが高い": "はーどるがたかい",
+  "割り込む": "わりこむ",
+  煩雑: "はんざつ",
+  自然に: "しぜんに",
+  面倒な: "めんどうな",
+  覆す: "くつがえす",
+  踏み場: "ふみば",
+  募って: "つのって",
+  怠った: "おこたった",
+  戒めた: "いましめた",
+  拒んで: "こばんで",
+  鈍って: "にぶって",
+  襲った: "おそった",
+  "見返りを求める": "みかえりをもとめる",
+  "経営の悪化を食い止める": "けいえいのあっかをくいとめる",
+  "異色の組み合わせ": "いしょくのくみあわせ",
+  気がかり: "きがかり",
+  尽くして: "つくして",
+  危ぶむ: "あやぶむ",
+  復興: "ふっこう",
+  弾んだ: "はずんだ",
+  察して: "さっして",
+  貧相: "ひんそう",
+  "小型の": "こがたの",
+  怪しい: "あやしい",
+  "薄く切った": "うすくきった",
+  以前から: "いぜんから",
+  明白に: "めいはくに",
+  克明に: "こくめいに",
+  張り合った: "はりあった",
+  "画期的な": "かっきてきな",
+  慌てずに: "あわてずに",
+  少なかった: "すくなかった",
+  "悪く言われた": "わるくいわれた",
+  "便利で役に立っている": "べんりでやくにたっている",
+  計画して: "けいかくして",
+  できる限り: "できるかぎり",
+  "意外につまらない": "いがいにつまらない",
+  厳しかった: "きびしかった",
+  繁盛: "はんじょう",
+  失脚: "しっきゃく",
+  滅びる: "ほろびる",
+  "田中さんがひたむきに生きるその姿は実にけなげだ。": "たなかさんがひたむきにいきるそのすがたはじつにけなげだ",
+  "彼らはその高台を半島探検の拠点にした。": "かれらはそのたかだいをはんとうたんけんのきょてんにした",
+  "生徒たちは新しい先生にすぐになついた。": "せいとたちはあたらしいせんせいにすぐになついた",
+  様相: "ようそう",
+  内訳: "うちわけ",
+  交錯: "こうさく",
+  緊密: "きんみつ",
+  退く: "しりぞく",
+  発足: "ほっそく",
+  思い詰める: "おもいつめる",
+  復旧: "ふっきゅう",
+  意地: "いじ",
+  心構え: "こころがまえ",
+  工面: "くめん",
+  調達: "ちょうたつ",
+  駆けつけます: "かけつけます",
+  圧倒的な: "あっとうてきな",
+  沈んだ: "しずんだ",
+  停滞: "ていたい",
+  切り出す: "きりだす",
+  在庫: "ざいこ",
+  供述: "きょうじゅつ",
+  見合わせた: "みあわせた",
+  一環: "いっかん",
+  協議: "きょうぎ",
+  圧力: "あつりょく",
+  出て: "でて",
+  綿密な: "めんみつな",
+  "悪いところ": "わるいところ",
+  "なかなか返事をしようとしなかった": "なかなかへんじをしようとしなかった",
+  複雑だ: "ふくざつだ",
+  感心した: "かんしんした",
+  疲れて: "つかれて",
+  "慎重に選ばれた": "しんちょうにえらばれた",
+  引退する: "いんたいする",
+  迷って: "まよって",
+  巻き込まれた: "まきこまれた",
+  活気づけた: "かっきづけた",
+  確認された: "かくにんされた",
+  慣れて: "なれて",
+  意図: "いと",
+  "社員と冗談を交えながら、和やかな雰囲気で座談会は行われた。": "しゃいんとじょうだんをまじえながらなごやかなふんいきでざだんかいはおこなわれた",
+  "１つのミスを犯して昇進の機会を失った。": "ひとつのみすをおかしてしょうしんのきかいをうしなった",
+  "あの口ぶりから察すると、彼は会社をやめるかもしれないね。": "あのくちぶりからさっするとかれはかいしゃをやめるかもしれないね",
+  "彼女は真っ先に電車に乗り込んで、４人分の席をとった。": "かのじょはまっさきにでんしゃにのりこんでよにんぶんのせきをとった",
+  "目的地までの時間の目安をつけて家を出た。": "もくてきちまでのじかんのめやすをつけていえをでた",
+  "その企業はここ数年で目覚ましい成長を遂げた。": "そのきぎょうはここすうねんでめざましいせいちょうをとげた",
+  "いちじは私も夏が来るたびに山登りに出かけたものだった。": "いちじはわたしもなつがくるたびにやまのぼりにでかけたものだった",
+  "彼女はその財布を警察にとどけた。": "かのじょはそのさいふをけいさつにとどけた",
+  "この仕事にはひじょうに忍耐力が必要だ。": "このしごとにはひじょうににんたいりょくがひつようだ",
+  "ぼつぼつ仕事を始めよう。": "ぼつぼつしごとをはじめよう",
+  "彼女だけが悪いとはいちがいには言えませんよ。": "かのじょだけがわるいとはいちがいにはいえませんよ",
+  "お話はいちおうおうかがいしておきます。": "おはなしはいちおうおうかがいしておきます",
+  "バスの本数を増やしてほしいという要望が多い。": "ばすのほんすうをふやしてほしいというようぼうがおおい",
+  "少しは私の話にも耳をかたむけてください。": "すこしはわたしのはなしにもみみをかたむけてください",
+  "ストレスの発散にはカラオケが一番いい。": "すとれすのはっさんにはからおけがいちばんいい",
+  "校則の違反者には断固たる処置をとる。": "こうそくのいはんしゃにはだんこたるしょちをとる",
+  "自分の希望に合致する職業につく。": "じぶんのきぼうにがっちするしょくぎょうにつく",
+  "佐藤さんの話は報告書の内容と食い違っている。": "さとうさんのはなしはほうこくしょのないようとくいちがっている",
+  "彼女は日本で有数の科学者である。": "かのじょはにほんでゆうすうのかがくしゃである",
 }));
+
+const DECOMPOSITION_OVERRIDES = new Map([
+  [
+    "d37-i8",
+    {
+      expression: "親しい",
+      char: "親",
+      value: "1단계: 親 → 亲[가깝다](추정) + 見[보다]<br>2단계: 亲 → 立[서다] + 木[나무]<br>최종: 立, 木, 見",
+    },
+  ],
+]);
 
 function normalizeKana(value) {
   if (typeof value !== "string") return "";
@@ -150,6 +277,11 @@ function parseTable(value) {
   return rows;
 }
 
+function getDecompositionOverride(item, char) {
+  const override = DECOMPOSITION_OVERRIDES.get(item?.id);
+  return override && override.expression === item.expression && override.char === char ? override.value : "";
+}
+
 function collectItems(data) {
   const items = [];
   const visit = (value) => {
@@ -172,6 +304,10 @@ function collectItems(data) {
 
 function expressionHanChars(expression) {
   return [...expression].filter((char) => HAN.test(char));
+}
+
+function hasHanExpression(expression) {
+  return expressionHanChars(String(expression ?? "")).length > 0;
 }
 
 function mapReading(item, map) {
@@ -203,6 +339,31 @@ function surfaceKana(expression) {
 
 function isKanaAnswer(value) {
   return typeof value === "string" && value.length > 0 && KANA_ONLY.test(value);
+}
+
+function itemReading(item) {
+  const value = typeof item?.reading === "string" ? item.reading : "";
+  if (!value || /\p{Script=Han}/u.test(value)) return "";
+  return normalizeKana(value);
+}
+
+function isKanaProblem(item) {
+  const problem = item.problem;
+  if (!problem || typeof problem !== "object") return false;
+  if (!hasHanExpression(item.expression)) return false;
+  if (problem.problemType === "hiragana") return true;
+  return Array.isArray(problem.choices) && problem.choices.length > 0
+    && problem.choices.every((choice) => isKanaAnswer(choice));
+}
+
+function isMalformedSimilarExpressionProblem(item) {
+  const problem = item.problem;
+  if (!problem || typeof problem !== "object" || problem.problemType !== "similar_expression") return false;
+  const sentence = typeof problem.sentence === "string" ? problem.sentence : "";
+  const choices = Array.isArray(problem.choices) ? problem.choices : [];
+  const answer = typeof problem.answer === "string" ? problem.answer : "";
+  return !sentence.trim() || choices.length !== 4 || new Set(choices).size !== 4
+    || !answer || !choices.includes(answer);
 }
 
 function addCandidate(map, expression, value, score) {
@@ -256,33 +417,66 @@ function chooseBest(candidates) {
   return [...unique.values()].sort((a, b) => b.score - a.score)[0]?.value ?? "";
 }
 
-function makeKanaChoices(answer, restKana) {
-  const rest = normalizeKana(restKana);
-  if (!answer || (rest && !answer.endsWith(rest))) return null;
-  const stem = rest ? answer.slice(0, -rest.length) : answer;
-  if (!stem) return null;
+function fixedKanaRuns(expression) {
+  return (String(expression ?? "").match(/[ぁ-ゖァ-ヺー]+/gu) ?? [])
+    .map(normalizeKana)
+    .filter(Boolean);
+}
+
+function fixedKanaMask(answer, expression) {
+  const chars = [...answer];
+  const mask = Array(chars.length).fill(false);
+  let cursor = 0;
+  for (const run of fixedKanaRuns(expression)) {
+    const position = answer.indexOf(run, cursor);
+    if (position < 0) return null;
+    for (let index = position; index < position + [...run].length; index += 1) mask[index] = true;
+    cursor = position + [...run].length;
+  }
+  return mask;
+}
+
+function preservesFixedKanaRuns(expression, value) {
+  const mask = fixedKanaMask(value, expression);
+  return Boolean(mask);
+}
+
+function makeKanaChoices(answer, expression) {
+  if (!answer || !isKanaAnswer(answer)) return null;
+  const chars = [...answer];
+  const frozen = fixedKanaMask(answer, expression);
+  if (!frozen) return null;
+  const mutableIndexes = chars.map((_, index) => index).filter((index) => !frozen[index]);
+  if (!mutableIndexes.length) return null;
   const choices = [answer];
-  for (let index = 0; index < stem.length && choices.length < 4; index += 1) {
-    const original = stem[index];
+  for (const index of mutableIndexes) {
+    const original = chars[index];
+    const rowIndex = HIRAGANA_ROWS.indexOf(original);
     const replacements = [
-      HIRAGANA_ROWS[(HIRAGANA_ROWS.indexOf(original) + 1) % HIRAGANA_ROWS.length],
-      HIRAGANA_ROWS[(HIRAGANA_ROWS.indexOf(original) + 2) % HIRAGANA_ROWS.length],
-      HIRAGANA_ROWS[(HIRAGANA_ROWS.indexOf(original) + 5) % HIRAGANA_ROWS.length],
+      rowIndex < 0 ? "あ" : HIRAGANA_ROWS[(rowIndex + 1) % HIRAGANA_ROWS.length],
+      rowIndex < 0 ? "か" : HIRAGANA_ROWS[(rowIndex + 2) % HIRAGANA_ROWS.length],
+      rowIndex < 0 ? "さ" : HIRAGANA_ROWS[(rowIndex + 5) % HIRAGANA_ROWS.length],
     ];
     for (const replacement of replacements) {
       if (!replacement || replacement === original) continue;
-      const choice = stem.slice(0, index) + replacement + stem.slice(index + 1) + rest;
-      if (!choices.includes(choice)) choices.push(choice);
+      const next = chars.slice();
+      next[index] = replacement;
+      const choice = next.join("");
+      if (!choices.includes(choice) && preservesFixedKanaRuns(expression, choice)) choices.push(choice);
       if (choices.length === 4) break;
     }
+    if (choices.length === 4) break;
   }
   if (choices.length < 4) {
-    for (let index = 0; index < stem.length && choices.length < 4; index += 1) {
+    for (const index of mutableIndexes) {
       for (const replacement of ["あ", "か", "さ", "た", "な", "ま"]) {
-        const choice = stem.slice(0, index) + replacement + stem.slice(index + 1) + rest;
-        if (!choices.includes(choice)) choices.push(choice);
+        const next = chars.slice();
+        next[index] = replacement;
+        const choice = next.join("");
+        if (!choices.includes(choice) && preservesFixedKanaRuns(expression, choice)) choices.push(choice);
         if (choices.length === 4) break;
       }
+      if (choices.length === 4) break;
     }
   }
   return choices.length === 4 ? choices : null;
@@ -298,10 +492,8 @@ function problemIsValid(item, expectedReading) {
   if (problem.choices.some((choice) => typeof choice !== "string" || !choice || !isKanaAnswer(choice))) return false;
   if (new Set(problem.choices).size !== 4 || !problem.choices.includes(problem.answer)) return false;
   if (expectedReading && problem.answer !== expectedReading) return false;
-  const rest = normalizeKana(item.readingParts?.restKana);
-  if (rest) {
-    if (problem.choices.some((choice) => !choice.endsWith(rest) || [...choice].length !== [...problem.answer].length)) return false;
-  } else if (problem.choices.some((choice) => Math.abs([...choice].length - [...problem.answer].length) > 2)) {
+  if (problem.choices.some((choice) => !preservesFixedKanaRuns(item.expression, choice))) return false;
+  if (problem.choices.some((choice) => Math.abs([...choice].length - [...problem.answer].length) > 2)) {
     return false;
   }
   const text = JSON.stringify({ choices: problem.choices, answer: problem.answer });
@@ -328,6 +520,8 @@ function memoIsValid(item) {
   if (rows.some((row) => !row || row.some((cell) => !cell))) return false;
   if (!chars.length) return rows.every((row) => row.every((cell) => cell === UNKNOWN));
   for (let index = 0; index < chars.length; index += 1) {
+    const override = getDecompositionOverride(item, chars[index]);
+    if (override && rows[4][index] !== override) return false;
     const examples = rows[3][index];
     if ((examples.match(new RegExp(chars[index], "gu")) ?? []).length < 2) return false;
   }
@@ -399,12 +593,14 @@ function collectKnowledge(allItems, candidateMap) {
 
 function buildReading(item, candidateMap, charCandidates) {
   const candidates = [...(candidateMap.get(item.expression) ?? [])];
+  const storedReading = itemReading(item);
+  if (storedReading) candidates.push({ value: storedReading, score: 600 });
   const manual = MANUAL_READINGS.get(item.expression);
-  if (manual) candidates.push({ value: manual, score: 250 });
+  if (manual) candidates.push({ value: manual, score: 550 });
   candidates.push(...oldReadingCandidates(item, charCandidates).map((candidate) => ({ ...candidate, score: candidate.score + 10 })));
   const map = item.readingParts?.kanjiToKana;
   const mapped = mapReading(item, map);
-  if (mapped) candidates.push({ value: mapped, score: 300 });
+  if (mapped) candidates.push({ value: mapped, score: 500 });
   const chars = expressionHanChars(item.expression);
   if (!chars.length) candidates.push({ value: surfaceKana(item.expression), score: 80 });
   else {
@@ -454,7 +650,7 @@ function buildMemo(item, knowledge, reading) {
     const pool = (knowledge.examplePool.get(char) ?? []).filter((value) => !value.startsWith(`${item.expression}（`));
     while (pool.length < 2) pool.push(`${char}例${pool.length + 1}（${charReading || "よみ"}）: ${UNKNOWN}`);
     examples.push(pool.slice(0, 2).join("<br>"));
-    decomposition.push(oldDecomp || meta.decomp[0] || UNKNOWN);
+    decomposition.push(getDecompositionOverride(item, char) || oldDecomp || meta.decomp[0] || UNKNOWN);
   }
   return [
     row("항목", header),
@@ -468,8 +664,7 @@ function buildMemo(item, knowledge, reading) {
 }
 
 function makeProblem(item, reading) {
-  const rest = normalizeKana(item.readingParts?.restKana);
-  const choices = makeKanaChoices(reading, rest);
+  const choices = makeKanaChoices(reading, item.expression);
   if (!choices) return null;
   const existingSentence = item.problem?.sentence;
   const sentence = typeof existingSentence === "string" && existingSentence.includes(item.expression)
@@ -494,6 +689,8 @@ function main() {
     if (manual) addCandidate(candidateMap, item.expression, manual, 250);
     const mapped = mapReading(item, item.readingParts?.kanjiToKana);
     if (mapped) addCandidate(candidateMap, item.expression, mapped, 220);
+    const storedReading = itemReading(item);
+    if (storedReading) addCandidate(candidateMap, item.expression, storedReading, 340);
     if (isKanaAnswer(item.problem?.answer)) addCandidate(candidateMap, item.expression, item.problem.answer, 60);
   }
   const firstKnowledge = collectKnowledge(allItems, candidateMap);
@@ -510,12 +707,23 @@ function main() {
     let memoChanged = 0;
     let problemChanged = 0;
     let preservedProblems = 0;
+    let excludedNoKanjiProblems = 0;
     let blockedProblems = 0;
+    const changedProblemItems = [];
     for (const item of items) {
       const reading = buildReading(item, candidateMap, knowledge.charCandidates);
       if (!memoIsValid(item)) {
         item.memoDecomposition = buildMemo(item, knowledge, reading);
         memoChanged += 1;
+      }
+      if (!hasHanExpression(item.expression) && item.problem && typeof item.problem === "object") {
+        excludedNoKanjiProblems += 1;
+        preservedProblems += 1;
+        continue;
+      }
+      if (!isKanaProblem(item) && !isMalformedSimilarExpressionProblem(item)) {
+        preservedProblems += 1;
+        continue;
       }
       const expected = reading || (isKanaAnswer(item.problem?.answer) ? normalizeKana(item.problem.answer) : "");
       if (problemIsValid(item, expected)) {
@@ -530,8 +738,9 @@ function main() {
       }
       item.problem = problem;
       problemChanged += 1;
+      changedProblemItems.push({ id: item.id, expression: item.expression, answer: expected });
     }
-    stats.push({ file: path.relative(ROOT, file), items: items.length, memoChanged, problemChanged, preservedProblems, blockedProblems });
+    stats.push({ file: path.relative(ROOT, file), items: items.length, memoChanged, problemChanged, preservedProblems, excludedNoKanjiProblems, blockedProblems, changedProblemItems });
     if (apply) fs.writeFileSync(file, `${JSON.stringify(data, null, 2)}\n`, "utf8");
   }
   console.log(`mode=${apply ? "APPLY" : "DRY-RUN"}`);
@@ -541,4 +750,6 @@ function main() {
   if (blocked.length > 100) console.log(`blocked_more=${blocked.length - 100}`);
 }
 
-main();
+if (require.main === module) main();
+
+module.exports = { MANUAL_READINGS };
