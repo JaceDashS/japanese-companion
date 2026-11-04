@@ -26,6 +26,7 @@
     "test:save-day-result": "node scripts/test-save-day-result.cjs",
     "test:stage-progression": "node scripts/test-stage-progression.cjs",
     "typecheck:mobile": "npm run typecheck --prefix mobile",
+    "test:google-auth": "node --test client/tests/google-auth.test.ts",
     "test:mobile": "npm test --prefix mobile",
     "build:android": "npm run build:android --prefix mobile"
   },

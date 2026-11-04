@@ -23,6 +23,7 @@ jobs:
       - run: npm ci
       - run: npm ci --prefix mobile
       - run: npm run typecheck
+      - run: npm run test:google-auth
       - run: npm run typecheck:mobile
       - run: npm run test:mobile
       - run: npm run test:stage-progression

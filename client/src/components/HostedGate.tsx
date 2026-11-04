@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { setStorageScope } from "../data/storageScope.ts";
+import { GoogleSignIn } from "./GoogleSignIn.tsx";
 import {
   fetchHostedAppAccess,
   fetchHostedSession,
@@ -143,6 +144,7 @@ function LoginDialog({ notice, onLoggedIn }: { notice?: string; onLoggedIn: (use
           로그인
         </h2>
         <p className="jc-muted">{notice ?? "jace-s 계정으로 로그인하면 학습 기록이 계정별로 저장됩니다."}</p>
+        <GoogleSignIn remember={remember} disabled={submitting} onBusyChange={setSubmitting} onLoggedIn={onLoggedIn} />
         <label className="jc-field">
           <span>아이디</span>
           <input className="jc-input" autoComplete="username" value={username} onChange={(event) => setUsername(event.target.value)} required />

@@ -16,6 +16,7 @@ const SITE_ORIGIN = String(import.meta.env?.VITE_JPC_SITE_ORIGIN ?? "").trim().r
 const API_ORIGIN_SETTING = String(import.meta.env?.VITE_JPC_API_ORIGIN ?? "").trim().replace(/\/+$/, "");
 const API_ORIGIN = API_ORIGIN_SETTING || SITE_ORIGIN;
 import { syncAccountClock } from "./accountClock";
+import { createHostedGoogleAuth } from "./googleAuth.ts";
 const SESSION_PATH = "/auth/session";
 const LOGIN_PATH = "/auth/login";
 const CSRF_COOKIE = "csrf";
@@ -59,6 +60,9 @@ let responseCsrfToken = "";
 function rememberCsrfToken(body: { csrfToken?: unknown }) {
   if (typeof body.csrfToken === "string" && body.csrfToken) responseCsrfToken = body.csrfToken;
 }
+
+/** Browser Google transport using the same API URL and CSRF cache as password login. */
+export const hostedGoogleAuth = createHostedGoogleAuth(apiOriginUrl, rememberCsrfToken);
 
 function readCookie(name: string) {
   if (typeof document === "undefined") return "";

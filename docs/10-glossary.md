@@ -13,3 +13,6 @@ The separate repository that provides account authentication, access checks, use
 - Input: A learner completes a review in the mobile client.
 - Steps: Shared rules calculate the payload; the platform API authenticates and saves it.
 - Expected result: The account record is updated without modifying the curriculum source.
+
+## Browser Google Sign In
+The official GIS button exchanging a nonce-bound Google credential for the existing platform account session. Used only by the hosted browser login dialog in this change. Code: GoogleSignIn, createHostedGoogleAuth, hostedGoogleAuth.

@@ -16,3 +16,6 @@
 
 ## CI Ownership
 The product CI runs the checks above without a platform checkout. Actual product-API integration remains an optional test in the platform repository and is run separately for each product transport.
+
+## Hosted Google Checks
+Run npm run test:google-auth for browser transport contracts. Separate mocked Edge checks exercise the HostedGate dialog and official-button callback integration; real Google and production sessions require interactive verification.
