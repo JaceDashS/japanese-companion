@@ -10,6 +10,9 @@ Clone this product repository directly, or initialize it through the platform su
 - Web dev server: `npm run dev:client`
 - Native dev server: `npm start --prefix mobile`
 - Native Android build: `npm run build:android` after installing the required Android SDK and Java.
+- Common Expo web build: `npm run export:web --prefix mobile` writes `mobile/dist/web`. The current local study server retains its React DOM client until its own entry is changed.
+- Common Android and web entry: `mobile/unified.ts`. Domain preparation includes the maintained web controllers and fails on unexpected browser runtime dependencies. Generated modules are disposable; do not edit them.
+- Windows APK builds use JDK 17 and `ANDROID_HOME` pointing to the Android SDK. CMake staging is shortened for application and library projects. The generated release variant currently uses the Android debug key for local installation.
 
 ## Integration
 The platform pins a product commit through a submodule. Push the product commit first, then commit the updated submodule reference in the platform. Do not expect a platform push to publish product source. Hosted pages use the platform API; the local server is retained for the existing local study mode.

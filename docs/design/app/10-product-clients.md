@@ -27,7 +27,7 @@ The shared modules expose the following identifiers. Re-export adapters preserve
 - `shared/domain/textRepair.ts`: `repairMojibakeText`
 
 ## Native Interfaces
-- `mobile/src/client.ts`: `CompanionClient` and `ApiError` implement serialized authentication, account checks and API errors; `accountDate` derives the account date from server time. The `AppKey`, `User`, `Clock`, `SessionStore` and fetch types define transport inputs.
+- `mobile/src/client.ts`: `CompanionClient` and `ApiError` implement serialized authentication, account checks and API errors; `accountDate` derives the account date from server time. The `AppKey`, `User`, `Clock`, `SessionStore` and fetch types define transport inputs. The new [Unified Client](20-unified-client.md#platform-session) adds browser cookie mode, account details, Google exchange and a source-controller fetch adapter while retaining the default native mode.
 - `mobile/src/study.ts`: `booksFromFiles` returns normalized books, `grade` returns PASS or FAIL, `progressPayload` returns an account-calendar SRS write, and `memoPayload` returns an original-address memo patch. Its public model types describe books, units, items and settings.
 - Native screen modules accept the existing state and action callbacks and render their React Native views. `App` owns login, refresh and navigation. `LibraryScreen`, `LoginScreen`, `PasswordScreen`, `StudyScreen`, `SettingsScreen`, `StudyMarkdown`, and certificate-only `PracticeScreen` retain their current UI behavior.
 - `mobile/src/navigation.ts` and `useMainReturn.ts`: `createMainReturn`, return-state types and `useMainReturn` preserve busy protection and unsaved-work confirmation before returning to the library.
@@ -45,6 +45,7 @@ The shared modules expose the following identifiers. Re-export adapters preserve
 - Output: Static responses, the existing health response and source-map denial.
 - Code: `scripts/serve-static.mjs`, `Dockerfile`.
 - Docker copies both client and shared source before the web compilation step. The native package remains outside the web dependency workspace.
+- Hosted Docker now uses the common Expo web entry and its independent mobile dependencies; the local study client remains available. See [Hosted Packaging](20-unified-client.md#hosted-packaging).
 
 ## Continuous Checks
 `.github/workflows/ci.yml` runs on product main pushes and pull requests. It installs the root and mobile lockfiles, checks both clients and runs native plus product parser or stage tests. The manual Android workflow remains separate. Platform CI validates its own API contracts without cloning this product.

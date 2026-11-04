@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useContext } from "react";
 import { Image, Linking, Text } from "react-native";
 import Markdown from "react-native-markdown-display";
 import type { CompanionClient } from "./client";
-import { colors, styles } from "./ui";
+import { styles } from "./ui";
+import { Theme } from "./unified/ui";
 /** Render notes as native text and views; only server-scoped study images carry credentials. */
 export function StudyMarkdown({
   text,
@@ -11,6 +12,7 @@ export function StudyMarkdown({
   text: string;
   client: CompanionClient;
 }) {
+  const colors = useContext(Theme);
   return (
     <Markdown
       style={{

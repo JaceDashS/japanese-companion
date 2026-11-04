@@ -11,6 +11,7 @@ export default {
     orientation: "default",
     userInterfaceStyle: "dark",
     scheme: "jaces-" + app,
+    web: { bundler: "metro", output: "single", name, backgroundColor: "#161a20" },
     android: {
       package: "com.jaces." + app + "companion",
       versionCode: 1,

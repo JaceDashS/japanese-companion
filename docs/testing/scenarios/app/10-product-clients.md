@@ -12,6 +12,7 @@
 - Steps: Parse the curriculum, grade selected answers and create the progress or memo payload.
 - Expected result: The original item address, stage transition and review date are preserved.
 - Test: `mobile/tests/study.test.ts`.
+- The unified screen identity case in that same test verifies duplicate display IDs remain independently addressable, source references are unchanged and repeated normalization is stable.
 
 ## Session And Main Return
 - Input: A native session request or an unsaved native study screen.
@@ -33,11 +34,13 @@
 - Input: Quiz question with choices, the learner types a note.
 - Steps: Grade the question and move to the next one.
 - Expected result: The next question shows an empty memo field.
+- Verified 2026-11-05: Common Expo web export in mocked Edge at 1280 and 360 px; scratch text is cleared after moving to the next question.
 
 ### Memo Is Never Saved
 - Input: A note typed during a quiz session.
 - Steps: Finish the session and save results, then reload.
 - Expected result: No request body, browser storage or device storage contains the note; the reloaded quiz shows an empty field.
+- Verified 2026-11-05: Mocked Edge save requests exclude the scratch sentinel. Native storage/runtime and reloaded-question behavior remain separate checks.
 
 ### Memo Only With Choices
 - Input: A question without choices, or the certificate app.

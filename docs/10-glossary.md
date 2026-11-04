@@ -4,7 +4,7 @@
 An independently versioned study application, containing a web client and a native mobile client.
 
 ## Shared Learning Rules
-The TypeScript source in `shared/` used by web adapters and transpiled for native consumption. It includes curriculum parsing, scheduling and product-specific grading helpers.
+The TypeScript source in `shared/` plus the existing product controllers in `client/src/domain/` reused by the common Expo screen tree. Generated adapters bind platform API, storage and account date boundaries rather than duplicating scheduling or grading.
 
 ## Platform
 The separate repository that provides account authentication, access checks, user records and the main site pages.
@@ -24,5 +24,10 @@ The official GIS button exchanging a nonce-bound Google credential for the exist
 
 ## Account Card
 - Definition: The settings card that shows the signed-in platform account and signs out of the shared session
-- Code: `AccountCard`, `useHostedSession`, `fetchHostedAccount`, `logoutFromHost`
+- Code: `AccountCard`, `useHostedSession`, `fetchHostedAccount`, `logoutFromHost`; common Expo `SettingsScreen`, `CompanionClient.account`, `CompanionClient.logout`
 - Avoid: "My Page", which is the main site page where profile changes happen
+
+## Source Identity
+- Definition: A session item key derived from the original source file, unit path, Day index and item index. It distinguishes items with the same display ID.
+- Code: `identifyStudyState`, `displayItemId`, `StudyItem.sourceRef`
+- Avoid: Treating the displayed item ID as a unique persistence address.

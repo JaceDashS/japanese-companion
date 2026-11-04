@@ -2,6 +2,15 @@
 node_modules
 **/node_modules
 client/dist
+mobile/dist
+mobile/android
+mobile/ios
+mobile/.expo
+mobile/.generated
+mobile/.cxx
+docs/.agent
+tmp
+scripts/debug
 asset
 backup
 server-data

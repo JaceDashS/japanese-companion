@@ -4,6 +4,7 @@ import {
   Linking,
   Platform,
   ScrollView,
+  Switch,
   Text,
   View,
 } from "react-native";
@@ -13,11 +14,17 @@ export function LoginScreen({
   error,
   busy,
   onLogin,
+  children,
+  remember = true,
+  onRememberChange,
 }: {
   name: string;
   error: string;
   busy: boolean;
   onLogin: (u: string, p: string) => void;
+  children?: React.ReactNode;
+  remember?: boolean;
+  onRememberChange?: (value: boolean) => void;
 }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -65,6 +72,8 @@ export function LoginScreen({
             setPassword("");
           }}
         />
+        {children}
+        {onRememberChange && <View style={styles.row}><Switch accessibilityLabel="로그인 유지" value={remember} onValueChange={onRememberChange} /><Text style={styles.text}>로그인 유지</Text></View>}
         <View style={styles.row}>
           <Button
             title="계정 만들기"

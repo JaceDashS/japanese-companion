@@ -50,15 +50,15 @@ type StoredRequestInit = {
   body?: string;
 };
 
-type StoredQueueRecord = SourceWriteQueueItem & {
+export type StoredQueueRecord = SourceWriteQueueItem & {
   input: string;
   init: StoredRequestInit;
   retryDelayMs: number;
 };
 
-type NewStoredQueueRecord = Omit<StoredQueueRecord, "id">;
+export type NewStoredQueueRecord = Omit<StoredQueueRecord, "id">;
 
-type QueueStorage = {
+export type QueueStorage = {
   persistent: boolean;
   list: () => Promise<StoredQueueRecord[]>;
   add: (record: NewStoredQueueRecord) => Promise<StoredQueueRecord>;
@@ -72,6 +72,12 @@ const RETRYABLE_STATUS_CODES = new Set([408, 425, 429]);
 const QUEUE_DB_NAME = "jpc-source-write-queue";
 const QUEUE_DB_VERSION = 1;
 const QUEUE_STORE_NAME = "requests";
+let platformStorage: (() => QueueStorage) | undefined;
+
+/** Install native persistent queue storage before creating account-scoped queues. Browsers retain IndexedDB. */
+export function configureQueueStorage(factory: () => QueueStorage) {
+  platformStorage = factory;
+}
 
 export class SourceWriteQueue {
   private readonly pending: QueueEntry[] = [];
@@ -356,6 +362,7 @@ export class SourceWriteQueue {
 }
 
 function createQueueStorage(): QueueStorage {
+  if (platformStorage) return platformStorage();
   if (typeof indexedDB === "undefined") return new MemoryQueueStorage();
   return new IndexedDbQueueStorage();
 }

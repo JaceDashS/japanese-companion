@@ -20,10 +20,67 @@ function response(body: unknown, status = 200, cookies: string[] = []) {
   });
 }
 const user = { id: "account-a", username: "a" };
+test("browser restores the shared session and sends response CSRF without exposing cookies", async () => {
+  const store = memory();
+  const calls: { url: string; init: RequestInit }[] = [];
+  const client = new CompanionClient("https://api.jace-s.com", "japanese", store, (async (url, init) => {
+    calls.push({ url: String(url), init: init ?? {} });
+    if (String(url).endsWith("/session")) return response({ user: { ...user, email: "learner@example.test" }, hasLocalPassword: false, csrfToken: "browser-csrf" });
+    return response({ ok: true });
+  }) as typeof fetch, true);
+  assert.equal((await client.restore())?.id, user.id);
+  assert.equal((await client.account()).hasLocalPassword, false);
+  await client.post("save-day-result", {}, user.id);
+  const write = calls.at(-1)!.init;
+  assert.equal(write.credentials, "include");
+  assert.equal((write.headers as Record<string, string>).Cookie, undefined);
+  assert.equal((write.headers as Record<string, string>)["x-csrf-token"], "browser-csrf");
+  assert.equal((write.headers as Record<string, string>)["x-companion-user"], user.id);
+  assert.equal(store.value(), null);
+});
+
+test("source controller transport preserves HTTP failures and account binding", async () => {
+  let calls = 0;
+  const client = new CompanionClient("https://api.jace-s.com", "japanese", memory(), (async (url) => {
+    calls++;
+    if (String(url).endsWith("/session")) return response({ user, csrfToken: "csrf" });
+    return response({ error: "TEMPORARY" }, 503);
+  }) as typeof fetch, true);
+  await client.restore();
+  const endpoint = "https://api.jace-s.com/companions/japanese/save-item-field";
+  const init = { method: "POST", body: "{}", headers: { "x-companion-user": user.id } };
+  assert.equal((await client.fetch(endpoint, init)).status, 503);
+  const before = calls;
+  const mismatch = await client.fetch(endpoint, { ...init, headers: { "x-companion-user": "account-b" } });
+  assert.equal(mismatch.status, 403);
+  assert.equal((await mismatch.json()).error, "ACCOUNT_CHANGED");
+  assert.equal(calls, before);
+  for (const path of ["https://evil.test/companions/japanese/save-item-field", "https://api.jace-s.com/auth/logout", "https://api.jace-s.com/companions/certificate/save-chapter-progress"]) {
+    await assert.rejects(client.fetch(path, init), /Invalid companion request/);
+  }
+  assert.equal(calls, before);
+});
+
+test("browser Google session keeps the token returned by the exchange", async () => {
+  const calls: { url: string; init: RequestInit }[] = [];
+  const client = new CompanionClient("https://api.jace-s.com", "japanese", memory(), (async (url, init) => {
+    calls.push({ url: String(url), init: init ?? {} });
+    if (String(url).endsWith("/google/config")) return response({ enabled: true, clientId: "test-client" });
+    if (String(url).endsWith("/google/challenge")) return response({ nonce: "one-use" });
+    if (String(url).endsWith("/google")) return response({ user, csrfToken: "google-csrf" });
+    return response({}, 200);
+  }) as typeof fetch, true);
+  assert.equal((await client.googleConfig()).enabled, true);
+  assert.equal(await client.googleChallenge(), "one-use");
+  assert.equal((await client.googleLogin("synthetic-token", true)).id, user.id);
+  await client.logout();
+  assert.equal((calls.at(-1)!.init.headers as Record<string, string>)["x-csrf-token"], "google-csrf");
+});
 test("native session rotation sends CSRF and account identity and clears on expiry", async () => {
   const store = memory();
   const calls: { url: string; init: RequestInit }[] = [];
   let expire = false;
+  let expirations = 0;
   const send = async (url: any, init: any) => {
     calls.push({ url: String(url), init });
     if (String(url).endsWith("/login"))
@@ -45,6 +102,7 @@ test("native session rotation sends CSRF and account identity and clears on expi
     store,
     send as typeof fetch,
   );
+  client.onUnauthenticated = () => { expirations++; };
   await client.login("a", "private-password");
   assert.ok(!store.value()?.includes("private-password"));
   await client.restore();
@@ -62,6 +120,7 @@ test("native session rotation sends CSRF and account identity and clears on expi
     (e: unknown) => e instanceof ApiError && e.status === 401,
   );
   assert.equal(store.value(), null);
+  assert.equal(expirations, 1);
 });
 test("stale account writes are blocked locally and network failures remain failures", async () => {
   const store = memory();

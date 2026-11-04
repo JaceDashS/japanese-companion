@@ -7,6 +7,40 @@ import {
   memoPayload,
 } from "../src/study.ts";
 const settings = { srs: { maxReviewStage: 6, failureRetryDays: 2 } };
+import { identifyStudyState, displayItemId } from "../src/unified/identity.ts";
+import type { StudyState } from "../../shared/domain/studyTypes.ts";
+import { NativeQueueStorage } from "../src/unified/queueStorage.ts";
+test("native queue snapshots restore order and failures without crossing account stores", async () => {
+  const disk = new Map<string, string>();
+  const make = (account: string) => new NativeQueueStorage(async (value) => { disk.set(account, value); }, async () => disk.get(account) ?? null);
+  const a = make("a");
+  const record = { input: "https://api.jace-s.com/companions/japanese/save-item-field", init: { method: "POST", body: "{}" }, label: "note", status: "pending" as const, createdAt: 1, retryCount: 0, nextAttemptAt: null, lastError: "", retryDelayMs: 1000 };
+  const [one, two] = await Promise.all([a.add(record), a.add(record)]);
+  await a.update(one.id, { status: "failed", lastError: "HTTP 422" });
+  const restored = make("a");
+  assert.deepEqual((await restored.list()).map((item) => [item.id, item.status]), [[one.id, "failed"], [two.id, "pending"]]);
+  assert.deepEqual(await make("b").list(), []);
+  await restored.remove(one.id);
+  assert.deepEqual((await make("a").list()).map((item) => item.id), [two.id]);
+  const broken = new NativeQueueStorage(async () => { throw Error("disk full"); }, async () => null);
+  await broken.add(record);
+  assert.equal(broken.persistent, false);
+  assert.equal((await broken.list()).length, 1);
+  const corrupt = new NativeQueueStorage(async () => { throw Error("must not overwrite corrupt bytes"); }, async () => "invalid JSON");
+  assert.deepEqual(await corrupt.list(), []);
+  assert.equal(corrupt.persistent, false);
+});
+test("unified sessions distinguish duplicate display IDs without changing source addresses", () => {
+  const source = { sourcePath: "asset/test.json", unitPath: "0", dayIndex: 0 };
+  const state: StudyState = { schemaVersion: 1, curriculum: [{ id: "unit", title: "Unit", days: [{ id: "day", title: "Day", items: [0, 1].map((itemIndex) => ({ id: "duplicate", sourceRef: { ...source, itemIndex } })) }] }] };
+  const once = identifyStudyState(state);
+  const items = once.curriculum[0].days[0].items;
+  assert.notEqual(items[0].id, items[1].id);
+  assert.equal(displayItemId(items[0]), "duplicate");
+  assert.equal(displayItemId(items[1]), "duplicate");
+  assert.deepEqual(items.map((item) => item.sourceRef), state.curriculum[0].days[0].items.map((item) => item.sourceRef));
+  assert.deepEqual(identifyStudyState(once), once);
+});
 test("Japanese source positions and duplicate item IDs remain stable in saved payloads", () => {
   const files = {
     "asset/jlpt-test.json": {

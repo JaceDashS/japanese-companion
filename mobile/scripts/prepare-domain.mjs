@@ -17,3 +17,4 @@ for (const file of files) {
   await fs.mkdir(path.dirname(target), { recursive: true });
   await fs.writeFile(target, output);
 }
+await import("./prepare-unified.mjs");
