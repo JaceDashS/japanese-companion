@@ -1,3 +1,4 @@
+import { getStorageScope } from "../data/storageScope.ts";
 import { useSyncExternalStore } from "react";
 import { apiFetch, apiUrl } from "../api.ts";
 import {
@@ -13,7 +14,7 @@ export type PersistSourceDayResult = (
   learningPath: LearningPath,
 ) => Promise<boolean>;
 
-const sourceWriteQueues = new WeakMap<SourceWriteFetch, SourceWriteQueue>();
+const sourceWriteQueues = new WeakMap<SourceWriteFetch, Map<string, SourceWriteQueue>>();
 
 export type SourceWriteQueueController = SourceWriteQueueSnapshot & {
   retryItem: (id: number) => Promise<void>;
@@ -137,11 +138,23 @@ export function createSourcePersistence(fetchImpl = apiFetch) {
 }
 
 function getSourceWriteQueue(fetchImpl: SourceWriteFetch) {
-  const existing = sourceWriteQueues.get(fetchImpl);
+  // 대기열을 계정별로 나누고, 작성 당시 계정을 헤더에 남겨 계정이 바뀐 뒤 재전송되면 서버가 거절하게 한다.
+  const userId = getStorageScope();
+  let queues = sourceWriteQueues.get(fetchImpl);
+  if (!queues) {
+    queues = new Map();
+    sourceWriteQueues.set(fetchImpl, queues);
+  }
+  const existing = queues.get(userId);
   if (existing) return existing;
 
-  const next = new SourceWriteQueue(fetchImpl);
-  sourceWriteQueues.set(fetchImpl, next);
+  const next = new SourceWriteQueue((input, init) => {
+    if (!userId) return fetchImpl(input, init);
+    const headers = new Headers(init?.headers);
+    headers.set("x-companion-user", userId);
+    return fetchImpl(input, { ...init, headers });
+  });
+  queues.set(userId, next);
   return next;
 }
 
@@ -159,7 +172,7 @@ function enqueueSourceWrite(writeQueue: SourceWriteQueue, body: Record<string, u
       input: apiUrl(endpoint),
       init: {
         method: "POST",
-        credentials: "same-origin",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },

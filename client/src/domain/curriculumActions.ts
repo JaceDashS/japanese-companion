@@ -1,3 +1,4 @@
+import { scopedStorageKey } from "../data/storageScope.ts";
 import { apiUrl } from "../api.ts";
 import { clearState, saveState } from "../data/storage.ts";
 import { writeAppPreferences } from "./appPreferences.ts";
@@ -34,7 +35,7 @@ export function createCurriculumActions({
   const refreshCurriculumFromSource = async () => {
     try {
       const response = await apiFetch(apiUrl("reload-curriculum", { t: Date.now() }), {
-        credentials: "same-origin",
+        credentials: "include",
       });
       if (!response.ok) {
         const body = await response.text();
@@ -74,7 +75,7 @@ export function createCurriculumActions({
     const newState = buildAppState(newBookId, sourceFiles, { dailyNewLearningCount });
     setState(newState);
     setSelectedBookId(newBookId);
-    localStorage.setItem(SELECTED_BOOK_STORAGE_KEY, newBookId);
+    localStorage.setItem(scopedStorageKey(SELECTED_BOOK_STORAGE_KEY), newBookId);
     void writeAppPreferences({ selectedBookId: newBookId, dailyNewLearningCount });
     setSession(null);
   };

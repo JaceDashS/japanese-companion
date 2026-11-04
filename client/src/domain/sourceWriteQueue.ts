@@ -1,3 +1,4 @@
+import { scopedStorageKey } from "../data/storageScope.ts";
 export type SourceWriteFetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 export type SourceWriteLearningPath = {
   unitId: string;
@@ -449,7 +450,7 @@ class IndexedDbQueueStorage implements QueueStorage {
 
 function openQueueDatabase() {
   return new Promise<IDBDatabase>((resolve, reject) => {
-    const request = indexedDB.open(QUEUE_DB_NAME, QUEUE_DB_VERSION);
+    const request = indexedDB.open(scopedStorageKey(QUEUE_DB_NAME), QUEUE_DB_VERSION);
     request.onupgradeneeded = () => {
       if (!request.result.objectStoreNames.contains(QUEUE_STORE_NAME)) {
         request.result.createObjectStore(QUEUE_STORE_NAME, { keyPath: "id", autoIncrement: true });

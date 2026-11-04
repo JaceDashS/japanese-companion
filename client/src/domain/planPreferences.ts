@@ -1,3 +1,4 @@
+import { scopedStorageKey } from "../data/storageScope.ts";
 import { useEffect, useState } from "react";
 import { normalizePlanRangePreference, writeAppPreferences, type PlanRangePreference } from "./appPreferences.ts";
 
@@ -14,7 +15,7 @@ export function usePlanRange(todayValue: string, initialPlanRange?: Partial<Plan
     if (fromInitial) return fromInitial;
 
     try {
-      const raw = localStorage.getItem(PLAN_RANGE_STORAGE_KEY);
+      const raw = localStorage.getItem(scopedStorageKey(PLAN_RANGE_STORAGE_KEY));
       if (!raw) return defaultRange;
       const parsed = JSON.parse(raw);
       return normalizePlanRange(parsed, defaultRange) ?? defaultRange;
@@ -25,7 +26,7 @@ export function usePlanRange(todayValue: string, initialPlanRange?: Partial<Plan
 
   useEffect(() => {
     try {
-      localStorage.setItem(PLAN_RANGE_STORAGE_KEY, JSON.stringify(planRange));
+      localStorage.setItem(scopedStorageKey(PLAN_RANGE_STORAGE_KEY), JSON.stringify(planRange));
     } catch (error) {
       // Ignore restricted browser storage; server preferences remain the source of truth.
     }

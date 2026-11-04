@@ -20,7 +20,7 @@ export function createAssetBackupActions({
       const runBackup = (force = false) =>
         apiFetch(apiUrl("asset-backup/export"), {
           method: "POST",
-          credentials: "same-origin",
+          credentials: "include",
           headers: {
             "Content-Type": "application/json",
           },
@@ -70,7 +70,7 @@ export function createAssetBackupActions({
     try {
       const response = await apiFetch(apiUrl("asset-backup/import"), {
         method: "POST",
-        credentials: "same-origin",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },

@@ -1,3 +1,5 @@
+> Archived 2026-11-04: Preserved before product repository integration. See the active documentation index.
+
 # 히라가나·카타카나-only 단어 정리 규칙
 
 ## 목적

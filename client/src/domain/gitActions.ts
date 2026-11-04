@@ -20,7 +20,7 @@ export function createGitActions({ apiFetch, showToast }: GitActionsOptions) {
     try {
       const response = await apiFetch(apiUrl("git-study-commit-push"), {
         method: "POST",
-        credentials: "same-origin",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },

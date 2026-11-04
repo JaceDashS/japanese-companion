@@ -17,7 +17,7 @@ export type AppPreferences = {
 export async function readAppPreferences(fetchImpl = apiFetch): Promise<AppPreferences> {
   try {
     const response = await fetchImpl(apiUrl("app-preferences"), {
-      credentials: "same-origin",
+      credentials: "include",
     });
     if (!response.ok) {
       const body = await response.text().catch(() => "");
@@ -37,7 +37,7 @@ export async function writeAppPreferences(preferences: AppPreferences, fetchImpl
   try {
     const response = await fetchImpl(apiUrl("app-preferences"), {
       method: "POST",
-      credentials: "same-origin",
+      credentials: "include",
       headers: {
         "Content-Type": "application/json",
       },

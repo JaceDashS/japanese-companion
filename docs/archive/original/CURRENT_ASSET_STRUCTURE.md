@@ -1,3 +1,5 @@
+> Archived 2026-11-04: Preserved before product repository integration. See the active documentation index.
+
 # Current Asset Structure
 
 현재 앱의 공식 에셋 구조는 루트 `asset/*.json` 파일의 combined JSON 구조이다.

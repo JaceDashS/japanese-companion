@@ -1,9 +1,10 @@
+import { scopedStorageKey } from "./storageScope.ts";
 const LEGACY_STORAGE_KEY = "jlpt-n1-expression-state-v1";
 const COMPAT_WORD_STORAGE_KEY = "jlpt-n1-word-state-v1";
 const COMPAT_KANJI_STORAGE_KEY = "jlpt-n1-kanji-state-v1";
 
 function bookStorageKey(bookId: string) {
-  return `jlpt-state-${bookId}`;
+  return scopedStorageKey(`jlpt-state-${bookId}`);
 }
 
 export function loadState(bookId: string) {

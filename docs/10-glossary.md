@@ -1,0 +1,15 @@
+# Glossary
+
+## Product
+An independently versioned study application, containing a web client and a native mobile client.
+
+## Shared Learning Rules
+The TypeScript source in `shared/` used by web adapters and transpiled for native consumption. It includes curriculum parsing, scheduling and product-specific grading helpers.
+
+## Platform
+The separate repository that provides account authentication, access checks, user records and the main site pages.
+
+## Example
+- Input: A learner completes a review in the mobile client.
+- Steps: Shared rules calculate the payload; the platform API authenticates and saves it.
+- Expected result: The account record is updated without modifying the curriculum source.

@@ -5,9 +5,8 @@ const os = require("os");
 const path = require("path");
 const ts = require("typescript");
 
-function compileQueue() {
-  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "jpc-source-queue-test-"));
-  const sourcePath = path.join(process.cwd(), "client", "src", "domain", "sourceWriteQueue.ts");
+function transpileTo(relativeSource, outputPath) {
+  const sourcePath = path.join(process.cwd(), "client", "src", relativeSource);
   const raw = fs.readFileSync(sourcePath, "utf8");
   const out = ts.transpileModule(raw, {
     compilerOptions: {
@@ -16,8 +15,16 @@ function compileQueue() {
     },
     fileName: sourcePath,
   });
-  const outputPath = path.join(tempDir, "sourceWriteQueue.cjs");
+  fs.mkdirSync(path.dirname(outputPath), { recursive: true });
   fs.writeFileSync(outputPath, out.outputText, "utf8");
+}
+
+function compileQueue() {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "jpc-source-queue-test-"));
+  // 대기열이 import하는 "../data/storageScope.ts" 경로를 그대로 찾을 수 있게 같은 폴더 구조로 둔다.
+  transpileTo(path.join("data", "storageScope.ts"), path.join(tempDir, "data", "storageScope.ts"));
+  const outputPath = path.join(tempDir, "domain", "sourceWriteQueue.cjs");
+  transpileTo(path.join("domain", "sourceWriteQueue.ts"), outputPath);
   return { Queue: require(outputPath).SourceWriteQueue, tempDir };
 }
 

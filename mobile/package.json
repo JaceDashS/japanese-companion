@@ -1,0 +1,35 @@
+{
+  "name": "@jace-s/japanese-mobile",
+  "version": "0.1.0",
+  "private": true,
+  "main": "index.ts",
+  "scripts": {
+    "start": "node scripts/expo.mjs start",
+    "android": "node scripts/expo.mjs run:android",
+    "export:android": "node scripts/expo.mjs export --platform android --output-dir dist/japanese",
+    "typecheck": "npm run prepare:domain && tsc --noEmit",
+    "test": "npm run prepare:domain && tsx --test tests/*.test.ts",
+    "build:android": "node scripts/build-android.mjs",
+    "prepare:domain": "node scripts/prepare-domain.mjs"
+  },
+  "dependencies": {
+    "expo": "~58.0.20",
+    "expo-constants": "~58.0.13",
+    "expo-secure-store": "~58.0.2",
+    "expo-status-bar": "~58.0.4",
+    "punycode": "^2.3.1",
+    "react": "19.3.0",
+    "react-native": "0.88.0",
+    "react-native-markdown-display": "^7.0.2",
+    "react-native-safe-area-context": "~5.10.1",
+    "react-native-svg": "15.16.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "@types/react": "~19.3.0",
+    "prettier": "^3.9.10",
+    "tsx": "^4.23.15",
+    "typescript": "~6.0.3"
+  },
+  "type": "module"
+}

@@ -1,0 +1,29 @@
+name: Android companions
+on:
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Install native dependencies
+        run: npm ci --prefix mobile
+      - name: Check native client types
+        run: npm run typecheck --prefix mobile
+      - name: Test account and study contracts
+        run: npm test --prefix mobile
+      - name: Build Android test installer
+        run: npm run build:android --prefix mobile
+      - uses: actions/upload-artifact@v4
+        with:
+          name: japanese-companion-android
+          path: mobile/dist/japanese/*.apk

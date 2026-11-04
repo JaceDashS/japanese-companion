@@ -1,7 +1,13 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App.tsx";
+import { HostedGate } from "./components/HostedGate.tsx";
+import ServiceNotices from "./components/ServiceNotices.tsx";
+import { isHostedMode } from "./hosted.ts";
 import "./ui/theme.css";
+
+// 공지 대상 앱 ID. 숫자가 아니면 모든 앱 대상 공지만 받는다
+const NOTICE_APP_ID = Number(import.meta.env.VITE_JPC_NOTICE_APP_ID) || null;
 
 class AppErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean; message: string; stack: string }> {
   constructor(props: { children: React.ReactNode }) {
@@ -47,7 +53,16 @@ if (!container) throw new Error("#root element not found");
 ReactDOM.createRoot(container).render(
   <React.StrictMode>
     <AppErrorBoundary>
-      <App />
+      {isHostedMode() ? (
+        <>
+          <ServiceNotices appId={NOTICE_APP_ID} />
+          <HostedGate>
+            <App />
+          </HostedGate>
+        </>
+      ) : (
+        <App />
+      )}
     </AppErrorBoundary>
   </React.StrictMode>,
 );

@@ -27,3 +27,9 @@ Thumbs.db
 
 backup
 server-data/
+
+*.private.*
+tmp/
+scripts/debug/
+docs/.agent/
+.cxx/

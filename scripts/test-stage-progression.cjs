@@ -5,14 +5,15 @@ const path = require("path");
 const assert = require("assert");
 const ts = require("typescript");
 
-const TEMP_DIR_REL = ".tmp-stage-test";
-const TEMP_DIR = path.join(process.cwd(), TEMP_DIR_REL);
-
 function compileSrsForTest() {
-  fs.mkdirSync(TEMP_DIR, { recursive: true });
-  const files = ["constants.ts", "date.ts", "srsPreferences.ts", "srs.ts"];
-  for (const name of files) {
-    const srcPath = path.join(process.cwd(), "client", "src", "domain", name);
+  const modules = new Map();
+  function load(name) {
+    name = name.replace(/^\.\//, "").replace(/\.ts$/, "");
+    if (modules.has(name)) return modules.get(name).exports;
+    const module = { exports: {} };
+    modules.set(name, module);
+    name += ".ts";
+    const srcPath = path.join(process.cwd(), "shared", "domain", name);
     const raw = fs.readFileSync(srcPath, "utf8");
     const out = ts.transpileModule(raw, {
       compilerOptions: {
@@ -21,9 +22,10 @@ function compileSrsForTest() {
       },
       fileName: srcPath,
     });
-    fs.writeFileSync(path.join(TEMP_DIR, name.replace(/\.ts$/, ".js")), out.outputText, "utf8");
+    new Function("module", "exports", "require", out.outputText)(module, module.exports, load);
+    return module.exports;
   }
-  fs.writeFileSync(path.join(TEMP_DIR, "package.json"), '{"type":"commonjs"}\n', "utf8");
+  return load("srs");
 }
 
 function createDay(stage = 2) {
@@ -47,7 +49,7 @@ function createDay(stage = 2) {
 }
 
 function runCases() {
-  const { applyQuizResultForDay, applyReviewResultForDay } = require(path.join(TEMP_DIR, "srs.js"));
+  const { applyQuizResultForDay, applyReviewResultForDay } = compileSrsForTest();
   const today = "2026-02-18";
   const results = [];
 
@@ -128,7 +130,6 @@ function runCases() {
 }
 
 function main() {
-  compileSrsForTest();
   const results = runCases();
   const passCount = results.filter((r) => r.status === "PASS").length;
   const failCount = results.length - passCount;

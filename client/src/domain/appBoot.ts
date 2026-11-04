@@ -1,3 +1,4 @@
+import { scopedStorageKey } from "../data/storageScope.ts";
 import { useEffect, useState } from "react";
 import type { AssetFileMap, AvailableBook } from "./curriculumFiles.ts";
 import { getDefaultBookId, listAvailableBooks, loadCurriculumFiles } from "./curriculumFiles.ts";
@@ -69,7 +70,7 @@ export function useAppBoot() {
 
 function readLegacySelectedBookId() {
   try {
-    return localStorage.getItem("jlpt-selected-book") ?? "";
+    return localStorage.getItem(scopedStorageKey("jlpt-selected-book")) ?? "";
   } catch (error) {
     return "";
   }

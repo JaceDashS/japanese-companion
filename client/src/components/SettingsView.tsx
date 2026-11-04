@@ -5,6 +5,7 @@ import type { StudyCommitPushResult } from "../domain/gitActions.ts";
 import type { SourceWriteQueueController } from "../domain/sourcePersistence.ts";
 import type { DeviceModePreference } from "../ui/deviceMode.ts";
 import type { SrsSettings } from "../domain/srsPreferences.ts";
+import { isHostedMode } from "../hosted.ts";
 
 function queueStatusLabel(status: "pending" | "retrying" | "failed") {
   if (status === "retrying") return "\uC7AC\uC2DC \uB300\uAE30";
@@ -197,9 +198,12 @@ export function SettingsView({
 
       <Card title="데이터">
         <div className="jc-settings-actions">
-          <button type="button" className="jc-btn" onClick={handleCommit} disabled={isSyncing}>
-            {syncLabel}
-          </button>
+          {/* 호스팅 모드에는 서버 저장소가 없으므로 Git 동기화를 숨긴다. */}
+          {!isHostedMode() && (
+            <button type="button" className="jc-btn" onClick={handleCommit} disabled={isSyncing}>
+              {syncLabel}
+            </button>
+          )}
           <button type="button" className="jc-btn" onClick={backupAssets}>
             에셋 백업
           </button>

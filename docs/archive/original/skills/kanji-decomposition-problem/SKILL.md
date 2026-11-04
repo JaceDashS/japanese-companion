@@ -1,3 +1,5 @@
+> Archived 2026-11-04: Preserved before product repository integration. See the active documentation index.
+
 ---
 name: kanji-decomposition-problem
 description: Audit and repair Japanese kanji decomposition Markdown and kana-reading multiple-choice problems in combined curriculum JSON while preserving every unrelated field.

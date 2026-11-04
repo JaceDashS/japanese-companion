@@ -24,6 +24,13 @@
     "typecheck": "npm run typecheck --workspace client",
     "preview": "npm run preview --workspace client",
     "test:save-day-result": "node scripts/test-save-day-result.cjs",
-    "test:stage-progression": "node scripts/test-stage-progression.cjs"
+    "test:stage-progression": "node scripts/test-stage-progression.cjs",
+    "typecheck:mobile": "npm run typecheck --prefix mobile",
+    "test:mobile": "npm test --prefix mobile",
+    "build:android": "npm run build:android --prefix mobile"
+  },
+  "devDependencies": {
+    "@types/react": "18.3.31",
+    "@types/react-dom": "18.3.7"
   }
 }

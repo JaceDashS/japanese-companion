@@ -23,7 +23,7 @@ type BuildAppStateOptions = {
 
 export async function loadCurriculumFiles() {
   const response = await apiFetch(apiUrl("reload-curriculum", { t: Date.now() }), {
-    credentials: "same-origin",
+    credentials: "include",
   });
   if (!response.ok) {
     const body = await response.text();

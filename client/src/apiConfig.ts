@@ -1,3 +1,5 @@
+import { attachCsrfToken, isHostedMode, readApiOrigin, readHostedApiBase } from "./hosted.ts";
+
 const ACCESS_TOKEN_ALIASES = ["access_token", "token"];
 const ACCESS_TOKEN_SESSION_KEY = "jpc_access_token";
 const API_BASE_ALIASES = ["api_base", "api_url"];
@@ -5,6 +7,12 @@ const API_BASE_SESSION_KEY = "jlpt_api_base_url";
 const DEFAULT_LAN_API_PORT = "3001";
 
 export function readApiBaseUrl() {
+  if (isHostedMode()) {
+    // 서브도메인 화면이면 로그인 쿠키가 있는 API 주소를 부른다
+    const origin = readApiOrigin() || (typeof window === "undefined" ? "" : window.location.origin);
+    return `${origin}${readHostedApiBase()}`;
+  }
+
   const fromUrl = readUrlParam(API_BASE_ALIASES);
   if (fromUrl) {
     const normalized = normalizeApiBaseUrl(fromUrl);
@@ -25,6 +33,9 @@ export function readApiBaseUrl() {
 }
 
 export function attachApiAccessToken(request: Request) {
+  // 호스팅 모드는 사이트 세션 쿠키로 인증하므로 접근 토큰 대신 CSRF 토큰을 붙인다.
+  if (isHostedMode()) return attachCsrfToken(request);
+
   const token = readAccessToken();
   if (!token || request.headers.has("X-JPC-Access-Token")) {
     return request;

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { getTodayString } from "./domain/date.ts";
+import { useAccountToday } from "./accountClock";
 import { toLearningPathKey } from "./domain/learningPath.ts";
 import { createProblemDraft } from "./domain/problem.ts";
 import { type AssetFileMap, type AvailableBook, buildAppState } from "./domain/curriculumFiles.ts";
@@ -79,7 +80,7 @@ function StudyApp({
   const [nav, setNav] = useState<NavKey>("today");
 
   const { showToast, toast } = useToast();
-  const today = getTodayString();
+  const today = useAccountToday(getTodayString);
   const [planRange, setPlanRange] = usePlanRange(today, initialPlanRange);
   const device = useDeviceMode();
   const [theme, setTheme] = useTheme();

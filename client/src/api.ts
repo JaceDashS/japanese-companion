@@ -1,4 +1,5 @@
 import { attachApiAccessToken, readApiBaseUrl } from "./apiConfig.ts";
+import { notifyIfUnauthenticated } from "./hosted.ts";
 import { formatRequestTarget, headersToLogObject, readBodyForLog, writeLogGroup } from "./apiLogging.ts";
 
 type QueryValue = string | number | boolean | null | undefined;
@@ -33,7 +34,9 @@ export async function apiFetch(input: RequestInfo | URL, init?: RequestInit) {
 
   if (!isApiDebugLoggingEnabled()) {
     try {
-      return await fetch(request);
+      const response = await fetch(request);
+      notifyIfUnauthenticated(response);
+      return response;
     } catch (error) {
       console.error("[jpc api client] request failed", formatRequestTarget(request.url), error);
       throw error;
@@ -54,6 +57,7 @@ export async function apiFetch(input: RequestInfo | URL, init?: RequestInit) {
 
   try {
     const response = await fetch(request);
+    notifyIfUnauthenticated(response);
     const durationMs = Date.now() - startedAt;
     const responseLogBase = {
       id,
@@ -95,6 +99,9 @@ function writeQueryParams(url: URL, query?: Record<string, QueryValue>) {
 function isApiRequest(url: string) {
   try {
     const parsed = new URL(url, typeof window === "undefined" ? "http://localhost" : window.location.origin);
+    // 호스팅 모드의 API 주소(api.jace-s.com/companions/japanese)는 /api로 시작하지 않는다
+    const apiBaseUrl = readApiBaseUrl().replace(/\/+$/, "");
+    if (apiBaseUrl && parsed.href.startsWith(`${apiBaseUrl}/`)) return true;
     return parsed.pathname.startsWith("/api/");
   } catch (error) {
     return false;
