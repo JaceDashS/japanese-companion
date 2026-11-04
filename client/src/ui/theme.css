@@ -992,6 +992,10 @@ button {
   padding-bottom: 1px;
 }
 
+.jc-quiz-memo {
+  width: 100%;
+}
+
 .jc-choices {
   display: grid;
   gap: 8px;

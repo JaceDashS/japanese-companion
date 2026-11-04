@@ -25,3 +25,21 @@
 - Expected result: Both type checks pass and 9 native tests pass.
 - Observed result: Passed before installing the repository into the platform services path. No APK, iOS build or physical device validation was performed for this source-layout change.
 - Additional verification: `npm run test:stage-progression` passed all 8 existing cases using `shared/domain/` source. Test modules compile in memory and create no temporary files.
+
+## Quiz Scratch Memo Scenarios
+- Design: [Quiz Scratch Memo](../../../design/app/10-product-clients.md#quiz-scratch-memo)
+
+### Memo Clears On Next Question
+- Input: Quiz question with choices, the learner types a note.
+- Steps: Grade the question and move to the next one.
+- Expected result: The next question shows an empty memo field.
+
+### Memo Is Never Saved
+- Input: A note typed during a quiz session.
+- Steps: Finish the session and save results, then reload.
+- Expected result: No request body, browser storage or device storage contains the note; the reloaded quiz shows an empty field.
+
+### Memo Only With Choices
+- Input: A question without choices, or the certificate app.
+- Steps: Open the question.
+- Expected result: No memo field is shown.

@@ -4,6 +4,23 @@ import { getExpressionStrict } from "../../domain/expression.ts";
 import { CopyableId } from "../common/Primitives.tsx";
 import type { SessionItemView, SessionView, SetSession } from "./sessionViewTypes.ts";
 
+/** One-line scratch memo for the current question; never saved and recreated empty for each question. */
+function QuizMemo() {
+  const [memo, setMemo] = React.useState("");
+  return (
+    <input
+      type="text"
+      className="jc-input jc-quiz-memo"
+      aria-label="메모"
+      placeholder="메모 (저장되지 않음)"
+      autoComplete="off"
+      spellCheck={false}
+      value={memo}
+      onChange={(event) => setMemo(event.target.value)}
+    />
+  );
+}
+
 export function QuizPane({
   copyDisplayId,
   currentItem,
@@ -53,6 +70,8 @@ export function QuizPane({
       </div>
 
       <p className="jc-quiz-sentence">{renderSentenceWithTarget(problem.sentence, problem.target)}</p>
+
+      <QuizMemo key={currentItem.id} />
 
       {!isChoiceVisible ? (
         <button

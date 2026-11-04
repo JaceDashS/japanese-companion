@@ -48,3 +48,12 @@ The shared modules expose the following identifiers. Re-export adapters preserve
 
 ## Continuous Checks
 `.github/workflows/ci.yml` runs on product main pushes and pull requests. It installs the root and mobile lockfiles, checks both clients and runs native plus product parser or stage tests. The manual Android workflow remains separate. Platform CI validates its own API contracts without cloning this product.
+
+## Quiz Scratch Memo
+- Input: Text typed by the learner on a quiz question with choices.
+- Output: Nothing persisted; the text exists only in component state.
+- Code: `client/src/components/session/QuizPane.tsx` → `QuizMemo` rendered with `key={currentItem.id}`; `mobile/src/StudyScreen.tsx` → `QuizMemo` rendered with `key={item.key}` for the japanese app only; style `.jc-quiz-memo` in `client/src/ui/theme.css`.
+- Steps: The keyed component remounts whenever the current item changes, so React discards the previous text.
+- Scenario: Type a note on question 3, move to question 4 → the field is empty.
+- Spec: [Quiz Scratch Memo](../../specs/app/10-product-clients.md#quiz-scratch-memo)
+- All scenarios: [Quiz Scratch Memo Scenarios](../../testing/scenarios/app/10-product-clients.md#quiz-scratch-memo-scenarios)

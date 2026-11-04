@@ -16,3 +16,8 @@ The separate repository that provides account authentication, access checks, use
 
 ## Browser Google Sign In
 The official GIS button exchanging a nonce-bound Google credential for the existing platform account session. Used only by the hosted browser login dialog in this change. Code: GoogleSignIn, createHostedGoogleAuth, hostedGoogleAuth.
+
+## Quiz Scratch Memo
+- Definition: A one-line, never-saved text field on a quiz question that resets when the question changes
+- Code: `QuizMemo`, `.jc-quiz-memo`
+- Avoid: "memo" alone, which refers to the saved word memo (`memoPayload`)

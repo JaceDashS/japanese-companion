@@ -6,6 +6,12 @@ import { Button, Field, styles } from "./ui";
 import { StudyMarkdown } from "./StudyMarkdown";
 import { useMainReturn } from "./useMainReturn";
 import { shuffle } from "../.generated/domain/shuffle.js";
+/** One-line scratch memo for the current question; never saved and recreated empty for each question. */
+function QuizMemo() {
+  const [memo, setMemo] = useState("");
+  return <Field label="메모 (저장되지 않음)" value={memo} onChangeText={setMemo} testID="quiz-memo" />;
+}
+
 export function StudyScreen({
   unit,
   shuffleChoices = true,
@@ -150,6 +156,9 @@ export function StudyScreen({
               )}
               {phase === "quiz" && app === "japanese" && !!item.explanation && (
                 <Text style={styles.text}>{item.explanation}</Text>
+              )}
+              {phase === "quiz" && app === "japanese" && item.choices.length > 0 && (
+                <QuizMemo key={item.key} />
               )}
               {phase === "quiz" &&
                 (choiceOrder[item.key] ?? item.choices).map((c) => (
