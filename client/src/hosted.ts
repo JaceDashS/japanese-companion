@@ -19,6 +19,7 @@ import { syncAccountClock } from "./accountClock";
 import { createHostedGoogleAuth } from "./googleAuth.ts";
 const SESSION_PATH = "/auth/session";
 const LOGIN_PATH = "/auth/login";
+const LOGOUT_PATH = "/auth/logout";
 const CSRF_COOKIE = "csrf";
 const CSRF_HEADER = "x-csrf-token";
 export const UNAUTHENTICATED_EVENT = "jpc:unauthenticated";
@@ -27,6 +28,17 @@ export interface HostedUser {
   id: string;
   username: string;
   mustChangePassword?: boolean;
+  displayName?: string | null;
+  email?: string | null;
+  emailVerified?: boolean;
+  createdAt?: string;
+  lastLoginAt?: string | null;
+}
+
+/** 계정 화면에 보여 줄 현재 세션 정보. 비밀번호가 없는 Google 전용 계정이면 hasLocalPassword가 false다. */
+export interface HostedAccount {
+  user: HostedUser;
+  hasLocalPassword: boolean;
 }
 
 export function isHostedMode() {
@@ -93,12 +105,33 @@ export function notifyIfUnauthenticated(response: Response) {
 }
 
 export async function fetchHostedSession(): Promise<HostedUser | null> {
+  return (await fetchHostedAccount())?.user ?? null;
+}
+
+/** 현재 로그인 세션의 계정 정보. 로그인되어 있지 않으면 null이다. */
+export async function fetchHostedAccount(): Promise<HostedAccount | null> {
   const response = await fetch(apiOriginUrl(SESSION_PATH), { credentials: "include", cache: "no-store" });
   if (response.status === 401) return null;
   if (!response.ok) throw new Error(`세션 확인 실패 (${response.status})`);
-  const body = (await response.json()) as { user?: HostedUser; csrfToken?: unknown };
+  const body = (await response.json()) as { user?: HostedUser; hasLocalPassword?: unknown; csrfToken?: unknown };
   rememberCsrfToken(body);
-  return body.user ?? null;
+  return body.user ? { user: body.user, hasLocalPassword: body.hasLocalPassword !== false } : null;
+}
+
+/**
+ * 사이트 세션을 끝낸다. 세션 쿠키는 api 주소 한 곳에 있으므로 같은 브라우저의 다른 앱과 메인 사이트도 함께 로그아웃된다.
+ * 서버가 거절하면 로그아웃된 척하지 않고 오류를 던진다.
+ */
+export async function logoutFromHost(): Promise<void> {
+  const token = responseCsrfToken || readCookie(CSRF_COOKIE);
+  const response = await fetch(apiOriginUrl(LOGOUT_PATH), {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json", ...(token ? { [CSRF_HEADER]: token } : {}) },
+    body: "{}",
+  });
+  if (!response.ok && response.status !== 401) throw new Error(`로그아웃 실패 (${response.status})`);
+  responseCsrfToken = "";
 }
 
 export async function fetchHostedAppAccess(appKey: string): Promise<boolean> {

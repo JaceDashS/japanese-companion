@@ -6,6 +6,7 @@ import type { SourceWriteQueueController } from "../domain/sourcePersistence.ts"
 import type { DeviceModePreference } from "../ui/deviceMode.ts";
 import type { SrsSettings } from "../domain/srsPreferences.ts";
 import { isHostedMode } from "../hosted.ts";
+import { AccountCard } from "./AccountCard.tsx";
 
 function queueStatusLabel(status: "pending" | "retrying" | "failed") {
   if (status === "retrying") return "\uC7AC\uC2DC \uB300\uAE30";
@@ -93,6 +94,7 @@ export function SettingsView({
 
   return (
     <>
+      <AccountCard />
       <Card title="화면">
         <div className="jc-settings-list">
           <div className="jc-settings-row">

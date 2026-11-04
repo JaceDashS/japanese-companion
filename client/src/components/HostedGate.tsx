@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { setStorageScope } from "../data/storageScope.ts";
 import { GoogleSignIn } from "./GoogleSignIn.tsx";
 import {
   fetchHostedAppAccess,
   fetchHostedSession,
   loginToHost,
+  logoutFromHost,
   siteUrl,
   UNAUTHENTICATED_EVENT,
   type HostedUser,
@@ -21,6 +22,25 @@ type GateState =
   | { kind: "password-change" }
   | { kind: "error"; message: string }
   | { kind: "ready"; user: HostedUser };
+
+/** 로그인된 화면 안에서만 값이 있다. 로컬 모드(사이트 로그인 없음)에서는 null이다. */
+export interface HostedSessionControls {
+  logout: () => Promise<void>;
+}
+const HostedSessionContext = createContext<HostedSessionControls | null>(null);
+
+/** 설정 화면의 계정 카드가 로그아웃을 요청할 때 쓴다. 호스팅 모드가 아니면 null이다. */
+export function useHostedSession() {
+  return useContext(HostedSessionContext);
+}
+
+/** 로그아웃 후 이전 계정의 화면 상태가 메모리에 남지 않도록 새로 열어 로그인 화면부터 시작한다. */
+const sessionControls: HostedSessionControls = {
+  logout: async () => {
+    await logoutFromHost();
+    window.location.reload();
+  },
+};
 
 const LOGIN_ERROR_MESSAGES: Record<string, string> = {
   INVALID_CREDENTIALS: "아이디 또는 비밀번호가 맞지 않습니다.",
@@ -75,10 +95,10 @@ export function HostedGate({ children }: { children: ReactNode }) {
 
   if (state.kind === "ready") {
     return (
-      <>
+      <HostedSessionContext.Provider value={sessionControls}>
         {children}
         {sessionExpired && <LoginDialog notice="로그인이 끝났습니다. 다시 로그인해 주세요." onLoggedIn={resolveUser} />}
-      </>
+      </HostedSessionContext.Provider>
     );
   }
   if (state.kind === "checking") return <GateCard title="로그인 확인 중" />;

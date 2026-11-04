@@ -21,3 +21,8 @@ The official GIS button exchanging a nonce-bound Google credential for the exist
 - Definition: A one-line, never-saved text field on a quiz question that resets when the question changes
 - Code: `QuizMemo`, `.jc-quiz-memo`
 - Avoid: "memo" alone, which refers to the saved word memo (`memoPayload`)
+
+## Account Card
+- Definition: The settings card that shows the signed-in platform account and signs out of the shared session
+- Code: `AccountCard`, `useHostedSession`, `fetchHostedAccount`, `logoutFromHost`
+- Avoid: "My Page", which is the main site page where profile changes happen
