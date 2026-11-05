@@ -187,3 +187,65 @@ test("explicit browser development origin remains isolated from native and other
   assert.throws(() => new CompanionClient("http://other.example", "japanese", memory(), fetch, true, dev), /HTTPS API required/);
   assert.throws(() => new CompanionClient(dev + "/api", "japanese", memory(), fetch, true, dev), /API origin required/);
 });
+
+import { signInWithNativeGoogle } from "../src/unified/nativeGoogleFlow";
+
+test("native Google cancellation and stale callbacks never exchange a credential; retry uses a new nonce", async () => {
+  const attempts: any[] = [];
+  let nonce = 0;
+  let selected: string | null = null;
+  let active = true;
+  const client = {
+    googleConfig: async () => ({ enabled: true, clientId: "public-web-client" }),
+    nativeGoogleChallenge: async () => String(++nonce).padStart(64, "0"),
+    nativeGoogleLogin: async (...args: any[]) => { attempts.push(args); return { id: "google-user" }; },
+  };
+  const configurations: any[] = [];
+  const provider = {
+    checkPlayServices: async () => true,
+    configure: (value: any) => { configurations.push(value); },
+    pickAccount: async () => selected,
+  };
+  assert.equal(await signInWithNativeGoogle(client, provider, true), null);
+  assert.equal(attempts.length, 0);
+  selected = "synthetic-id-token";
+  assert.deepEqual(await signInWithNativeGoogle(client, provider, false), { id: "google-user" });
+  assert.equal(attempts[0][1], "2".padStart(64, "0"));
+  assert.equal(attempts[0][2], false);
+  assert.notEqual(configurations[0].nonce, configurations[1].nonce);
+  assert.equal(configurations[1].autoSelectOnSignIn, false);
+  provider.pickAccount = async () => { active = false; return "late-token"; };
+  assert.equal(await signInWithNativeGoogle(client, provider, true, () => active), null);
+  assert.equal(attempts.length, 1);
+});
+
+test("disabled native Google configuration never invokes the picker or issues a challenge", async () => {
+  const forbidden = async () => { throw new Error("must not run"); };
+  await assert.rejects(signInWithNativeGoogle({ googleConfig: async () => ({ enabled: false, clientId: null }),
+    nativeGoogleChallenge: forbidden, nativeGoogleLogin: forbidden },
+    { checkPlayServices: forbidden, configure: () => { throw Error("must not configure"); }, pickAccount: forbidden }, true), /GOOGLE_NOT_CONFIGURED/);
+});
+
+test("native Google exchange captures encrypted session cookies and sends CSRF on logout", async () => {
+  const store = memory();
+  const requests: Array<{ url: string; init: RequestInit }> = [];
+  const client = new CompanionClient("https://api.jace-s.com", "japanese", store, (async (url, init) => {
+    requests.push({ url: String(url), init: init ?? {} });
+    if (String(url).endsWith("/native/challenge")) return response({ nonce: "a".repeat(64) });
+    if (String(url).endsWith("/native")) return response({ user }, 200, ["session=native-google; HttpOnly; Path=/", "csrf=native-csrf; Path=/"]);
+    return response({}, 200);
+  }) as typeof fetch);
+  const nonce = await client.nativeGoogleChallenge();
+  assert.equal((await client.nativeGoogleLogin("synthetic-token", nonce, false)).id, user.id);
+  assert.equal(JSON.parse(store.value()!).session, "native-google");
+  assert.equal(requests[1].init.credentials, "omit");
+  const sent = JSON.parse(String(requests[1].init.body));
+  assert.equal(sent.nonce, nonce);
+  assert.equal(sent.remember, false);
+  assert.equal(typeof sent.timeZone, "string");
+  await client.logout();
+  assert.equal((requests.at(-1)!.init.headers as Record<string,string>)["x-csrf-token"], "native-csrf");
+  const browser = new CompanionClient("https://api.jace-s.com", "japanese", memory(), fetch, true);
+  await assert.rejects(browser.nativeGoogleChallenge(), /native transport/);
+  await assert.rejects(browser.nativeGoogleLogin("token", nonce, true), /native transport/);
+});

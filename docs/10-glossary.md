@@ -31,3 +31,7 @@ The official GIS button exchanging a nonce-bound Google credential for the exist
 - Definition: A session item key derived from the original source file, unit path, Day index and item index. It distinguishes items with the same display ID.
 - Code: `identifyStudyState`, `displayItemId`, `StudyItem.sourceRef`
 - Avoid: Treating the displayed item ID as a unique persistence address.
+
+## Native Google Challenge
+
+A one-use server nonce bound to the Android Google account picker token. Code: nativeGoogleChallenge, nativeGoogleLogin and signInWithNativeGoogle. Separate from the browser cookie challenge.

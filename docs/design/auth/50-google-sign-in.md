@@ -25,3 +25,23 @@ flowchart LR
 - Spec: [Google Sign In](../../specs/auth/50-google-sign-in.md)
 - Architecture: [Overview](../../architecture/10-overview.md)
 - Scenarios: [Google Sign In](../../testing/scenarios/auth/50-google-sign-in.md)
+
+## Native Google Implementation
+
+- Inputs: Runtime web Client ID, remember selection, server native nonce and official picker credential.
+- Outputs: Existing account session or null on cancellation and stale callbacks; safe localized errors on failure.
+- Code: `mobile/src/unified/GoogleButton.tsx`, `mobile/src/unified/nativeGoogleFlow.ts`, `mobile/src/client.ts` and the locked package dependencies. Android SDK autolinking is used; web resolves GoogleButton.web.tsx without loading the native SDK.
+- Public contracts: NativeGoogleClient supplies config, nativeGoogleChallenge and nativeGoogleLogin; NativeGoogleProvider supplies Play Services checks, configuration and explicit account selection. signInWithNativeGoogle checks liveness between asynchronous steps, configures the fresh nonce with autoSelectOnSignIn false, and exchanges successful credentials only. GoogleButton disables duplicate submissions and ignores unmounted results.
+- The client obtains POST /auth/google/native/challenge, then sends credential, nonce, remember and local timeZone to POST /auth/google/native. Existing native transport persists session and CSRF cookies in encrypted storage. Browser cookie challenges are unchanged.
+- Representative scenario input: Picker cancellation followed by retry. Steps: Cancel once and open again. Expected result: No first exchange and a new nonce for the second attempt.
+- Spec: [Companion requirements](../../specs/auth/50-google-sign-in.md#android-google-account-picker)
+- Architecture: [Overview](../../architecture/10-overview.md)
+- Scenarios: [Authentication cases](../../testing/scenarios/auth/50-google-sign-in.md#native-google-contracts)
+
+```mermaid
+flowchart LR
+ A[Google button] --> B[Fresh native nonce]
+ B --> C[Android account picker]
+ C --> D[Native token exchange]
+ D --> E[Existing session]
+```

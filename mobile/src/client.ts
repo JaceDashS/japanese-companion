@@ -208,6 +208,24 @@ export class CompanionClient {
       return result.user;
     });
   }
+  /** Request a nonce isolated from browser Google challenges. */
+  nativeGoogleChallenge(): Promise<string> {
+    if (this.browser) return Promise.reject(new Error("Native Google sign-in requires the native transport"));
+    return this.serialize(async () => (await this.request<{ nonce: string }>("/auth/google/native/challenge", {})).nonce);
+  }
+  /** Exchange a Credential Manager ID token and keep the resulting session only in encrypted native storage. */
+  nativeGoogleLogin(credential: string, nonce: string, remember: boolean): Promise<User> {
+    if (this.browser) return Promise.reject(new Error("Native Google sign-in requires the native transport"));
+    return this.serialize(async () => {
+      await this.clear();
+      const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const result = await this.request<{ user: User }>("/auth/google/native", { credential, nonce, remember, timeZone });
+      if (!this.credentials) throw new Error("로그인 세션을 저장하지 못했습니다.");
+      this.user = result.user;
+      return result.user;
+    });
+  }
+
   /** Adapt existing source-write controllers to the same serialized account-bound transport. */
   fetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
     const url = new URL(String(input));

@@ -42,3 +42,12 @@
 - Verified 2026-11-05: Web type checking and four hosted Google transport tests passed. The existing native transport and UI were not changed.
 - Edge at 360px passed direct entry, conflict guidance, fresh-nonce retry, stale and duplicate callback suppression, remember selection, original URL preservation, password fallback and permission denial using a mocked GIS script and API.
 - These local browser checks do not prove a real Google account login or production deployment.
+
+## Native Google Contracts
+
+- Design: [Native Google Implementation](../../../design/auth/50-google-sign-in.md#native-google-implementation)
+- Test: `mobile/tests/client.test.ts`.
+- Input: Mock provider success, cancellation, retry, disabled configuration or a stale callback.
+- Steps: Run native orchestration and transport with a fresh challenge and observe exchanges and stored cookies.
+- Expected result: Success exchanges once with matching nonce and remember value; cancellation and stale callbacks never exchange; retry obtains a new nonce; disabled config never opens the provider. Session and CSRF credentials use existing encrypted storage and logout protections.
+- Validation boundary: Type checks, local client tests and web export do not prove Android compilation, Console registration, physical account selection or real Google login. APK creation is deferred.
