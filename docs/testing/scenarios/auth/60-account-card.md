@@ -21,4 +21,4 @@
 ### Successful Sign Out
 - Input: The logout request returns 204.
 - Steps: Press sign out.
-- Expected result: The request carries the session CSRF header, the page reloads and the login dialog is shown.
+- Expected result: The request carries the session CSRF header, the account screen unmounts and login appears and the login dialog is shown.

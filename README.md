@@ -1,10 +1,14 @@
 # Japanese Companion
 
-Product repository for the web study client and native mobile app. Shared learning rules live in `shared/`. The hosted web and mobile clients use the platform API at `https://api.jace-s.com`; platform pages, authentication services and account records remain in the platform repository.
+One Expo React Native screen codebase for web and Android. Screens live in `mobile/src/unified/`; learning rules and controllers live in `shared/`. The platform owns authentication and account records.
 
 - [Documentation](docs/00-index.md)
-- Web dependencies: `npm ci`; type check: `npm run typecheck`
-- Mobile dependencies: `npm ci --prefix mobile`; type check: `npm run typecheck:mobile`; tests: `npm run test:mobile`
-- Android package: `npm run build:android` after configuring Java and the Android SDK
+- Install: `npm ci` and `npm ci --prefix mobile`
+- Web development: `npm run dev`; web export: `npm run build`
+- Check common code: `npm run typecheck` and `npm test`
+- Android JavaScript: `npm run export:android`; APK: `npm run build:android`
+- [Development and API settings](docs/guides/10-development.md)
 
-Example: clone this repository on its own, install the web and mobile dependencies, then run both type checks. Neither command needs a sibling product repository. The optional local `server/` and curriculum assets are preserved; hosted account storage remains in the platform API.
+Local web uses the same platform API as hosted web by default. Configure a compatible development API for isolated account writes. Original curriculum and standalone content server tooling remain preserved without a second UI.
+
+Example: Change a common question screen, build web and Android, and both outputs include the same change. No sibling product repository is required.

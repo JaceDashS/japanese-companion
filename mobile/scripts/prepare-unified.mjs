@@ -9,8 +9,8 @@ const product = path.resolve(mobile, "..");
 const output = path.join(mobile, ".generated/product");
 const visited = new Set();
 const adapters = new Map([
-  ["client/src/api.ts", "apiFetch, apiUrl"],
-  ["client/src/data/storage.ts", "loadState, saveState, clearState"],
+  ["shared/controllers/api.ts", "apiFetch, apiUrl"],
+  ["shared/controllers/data/storage.ts", "loadState, saveState, clearState"],
 ]);
 
 async function resolveSource(from, specifier) {
@@ -23,7 +23,7 @@ async function resolveSource(from, specifier) {
 
 async function generate(source) {
   const relative = path.relative(product, source).replaceAll("\\", "/");
-  if (relative.startsWith("../") || !/^(client\/src|shared)\//.test(relative)) throw new Error("Outside product source: " + source);
+  if (relative.startsWith("../") || !/^shared\//.test(relative)) throw new Error("Outside product source: " + source);
   if (visited.has(relative)) return;
   visited.add(relative);
   const target = path.join(output, relative.replace(/\.tsx?$/, ".js"));
@@ -32,8 +32,8 @@ async function generate(source) {
   if (adapters.has(relative)) {
     const runtime = path.relative(path.dirname(target), path.join(mobile, "src/unified/runtime")).replaceAll("\\", "/");
     text = `export { ${adapters.get(relative)} } from "${runtime}";\n`;
-  } else if (relative === "client/src/domain/date.ts") {
-    text = 'export * from "../../../shared/domain/date.js";\n';
+  } else if (relative === "shared/controllers/domain/date.ts") {
+    text = 'export * from "../../domain/date.js";\n';
     text += 'export { getTodayString } from "../../../../../src/unified/runtime";\n';
     await generate(path.join(product, "shared/domain/date.ts"));
   } else {
@@ -56,6 +56,6 @@ async function generate(source) {
 for (const name of ["curriculumFiles", "homeDashboard", "learningPlanSync", "sessionController", "sessionOpeners", "sessionSelectors", "sessionInput", "sessionEffects", "progressActions", "sourcePersistence", "dayClipboardImporter", "dayClipboardHelpers", "problem"]) {
   // Keyboard effects are installed by the platform screen, not the browser-only hook.
   if (name === "sessionEffects") continue;
-  await generate(path.join(product, "client/src/domain", name + ".ts"));
+  await generate(path.join(product, "shared/controllers/domain", name + ".ts"));
 }
 console.log("Prepared " + visited.size + " reused product modules");

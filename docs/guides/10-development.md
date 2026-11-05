@@ -1,23 +1,36 @@
 # Independent Development
 
-## Checkout
-Clone this product repository directly, or initialize it through the platform submodule checkout. Install web dependencies with `npm ci` at the product root and native dependencies with `npm ci --prefix mobile`. Mobile is intentionally not included in the root npm workspaces because it uses a different React runtime.
+## Setup
+Install root tools with `npm ci` and common Expo dependencies with `npm ci --prefix mobile`. Root tools do not contain a second React DOM UI. Both lockfiles belong to this product.
 
 ## Commands
-- Web type check: `npm run typecheck`
-- Native type check: `npm run typecheck:mobile`
-- Native unit tests: `npm run test:mobile`
-- Web dev server: `npm run dev:client`
-- Native dev server: `npm start --prefix mobile`
-- Native Android build: `npm run build:android` after installing the required Android SDK and Java.
-- Common Expo web build: `npm run export:web --prefix mobile` writes `mobile/dist/web`. The current local study server retains its React DOM client until its own entry is changed.
-- Common Android and web entry: `mobile/unified.ts`. Domain preparation includes the maintained web controllers and fails on unexpected browser runtime dependencies. Generated modules are disposable; do not edit them.
-- Windows APK builds use JDK 17 and `ANDROID_HOME` pointing to the Android SDK. CMake staging is shortened for application and library projects. The generated release variant currently uses the Android debug key for local installation.
+- `npm run dev` or `npm run dev:client`: Start Expo web from `mobile/unified.ts`.
+- `npm start --prefix mobile`: Start the same Expo project for device development.
+- `npm run build` or `npm run export:web`: Export common screens to `mobile/dist/web`.
+- `npm run preview`: Serve the export on loopback port 47832; set `PORT` to choose another port.
+- `npm run local`: Build and preview the same Expo export. `local:no-build` reuses the existing export.
+- `npm run typecheck`, `npm test`: Prepare shared sources and check the common code.
+- `npm run export:android`: Bundle the same entry for Android.
+- `npm run build:android`: Build the APK with the existing Android SDK and JDK 17 tooling.
+- `npm run dev:server`: Optional standalone content server tooling. It has no separate UI; it does not implement platform account login.
+
+## API Settings
+Local web uses platform authentication, account records and curriculum, exactly like hosted web. Set `EXPO_PUBLIC_JPC_API_ORIGIN` to a compatible development platform API before starting/exporting if isolated data is required. The default is `https://api.jace-s.com`; local UI changes do not imply isolated account writes. The standalone content server is not a substitute for this API.
+
+## Source Ownership
+Maintain screens only in `mobile/src/unified/` and common login/Markdown components. Maintain controllers in `shared/controllers/`, and grading/parsing in `shared/domain/` and `shared/data/` where present. Generated adapters are disposable build output, not editable source. Platform-specific session, storage, keyboard and Google rendering adapters remain separate.
+
+## Packaging
+Hosted Docker and local commands use the same web export; Android uses the same `mobile/unified.ts` entry. APKs use the existing package identity. Current local release builds use the debug signing key, so store signing and physical-device behavior require separate checks.
 
 ## Integration
-The platform pins a product commit through a submodule. Push the product commit first, then commit the updated submodule reference in the platform. Do not expect a platform push to publish product source. Hosted pages use the platform API; the local server is retained for the existing local study mode.
+Commit and publish product changes independently before updating a platform submodule reference. Do not import sibling product sources. The platform owns account APIs and records; original curriculum and server tooling are preserved.
 
 ## Example
-- Input: A changed mobile study screen.
-- Steps: Check and commit it in the product repository; push it; update the platform submodule reference.
-- Expected result: The platform checkout reproducibly selects that exact product revision.
+- Input: Change a question label in `mobile/src/unified/SessionScreen.tsx`.
+- Steps: Run `npm run build` and `npm run export:android`.
+- Expected result: Both outputs use the same modified screen without an alternate DOM build.
+- Design: [Unified Client](../design/app/20-unified-client.md)
+
+## Shared Development Build
+The platform shared-development stack explicitly sets `EXPO_PUBLIC_COMPANION_LOCAL_API=1` and `EXPO_PUBLIC_BASE_PATH`. This selects only the current browser origin and prefixes web resource URLs. Ordinary local commands retain the configured HTTPS API default. Companion polling exports require browser refresh after completion; main-site HMR is separate.

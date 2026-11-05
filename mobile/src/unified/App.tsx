@@ -5,7 +5,7 @@ import { StatusBar } from "expo-status-bar";
 import { ApiError, type User } from "../client";
 import { LoginScreen, PasswordScreen } from "../LoginScreen";
 import { Busy } from "../ui";
-import { setStorageScope } from "../../.generated/product/client/src/data/storageScope.js";
+import { setStorageScope } from "../../.generated/product/shared/controllers/data/storageScope.js";
 import { client, getTodayString, listenForExpiry, setClock } from "./runtime";
 import { loadStudy, useStudyModel, type BootData } from "./useStudyModel";
 import { HomeScreen } from "./HomeScreen";

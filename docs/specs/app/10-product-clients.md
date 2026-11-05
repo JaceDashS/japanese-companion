@@ -5,7 +5,7 @@
 - Web and native clients use one maintained implementation of the product learning rules.
 - Existing account API paths, app identity, calendar behavior and record addresses remain unchanged.
 - No account files, credentials or private development notes are published.
-- Native runtime UI remains React Native. The current React DOM web client is being replaced by the approved [Unified Client](20-unified-client.md), using React Native Web.
+- Native runtime UI remains React Native. The web and Android clients use the same approved [Unified Client](20-unified-client.md), using React Native Web.
 - Design: [Product Clients](../../design/app/10-product-clients.md).
 
 ## Example

@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { PanResponder, ScrollView, Text, View } from "react-native";
 import * as Clipboard from "expo-clipboard";
-import { normalizeProblem } from "../../.generated/product/client/src/domain/problem.js";
+import { normalizeProblem } from "../../.generated/product/shared/controllers/domain/problem.js";
 import type { StudyItem } from "../../../shared/domain/studyTypes";
 import type { StudyModel } from "./useStudyModel";
 import { StudyMarkdown } from "../StudyMarkdown";

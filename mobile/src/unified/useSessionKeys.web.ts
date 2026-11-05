@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { createSessionKeyboardHandler } from "../../.generated/product/client/src/domain/sessionInput.js";
+import { createSessionKeyboardHandler } from "../../.generated/product/shared/controllers/domain/sessionInput.js";
 import type { StudyModel } from "./useStudyModel";
 /** Preserve browser quiz navigation, number keys and the note shortcut outside editable fields. */
 export function useSessionKeys(model: StudyModel, onNotes: () => void, onHome: () => void) {

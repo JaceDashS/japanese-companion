@@ -55,3 +55,21 @@
 - Steps: Build the release APK, inspect badging and verify its signing certificate.
 - Expected result: Existing package identity `com.jaces.japanesecompanion` is preserved, both ABIs are included and the APK signature verifies.
 - Observed 2026-11-05: Gradle 9.4.1 completed successfully. APK version 0.1.0 code 1, min SDK 24, target SDK 36, size 41,822,599 bytes, SHA256 `5fb71bbb64d695e3da3ff9502410519cd269d3b0279af17223b54002dbe6fbab`, verified Android Debug certificate. This is a local installation artifact; no device launch, live login or store-signing verification is claimed.
+
+## Single Source Builds
+- Input: A checkout with the obsolete DOM screen tree removed, shared controllers and the common Expo entry.
+- Steps: Run the root web build, Android JavaScript export, type check and the existing account/queue/study tests.
+- Expected result: Both outputs resolve the same screens and shared source; no build reads the removed client directory. Existing payloads, grading and retry semantics remain unchanged.
+- Tests: `mobile/tests/study.test.ts`, `mobile/tests/client.test.ts`, `mobile/tests/navigation.test.ts` and the web/Android exports.
+
+## Development API Isolation
+- Input: An explicit browser development origin, a mismatched HTTP origin and a native client.
+- Steps: Construct the common client in each mode and build a web export with the development prefix.
+- Expected result: Only the matching explicitly configured browser origin can use HTTP. Production defaults and native validation remain unchanged; prefixed assets stay under the companion route.
+- Test: `mobile/tests/client.test.ts` explicit browser development origin remains isolated from native and other HTTP origins.
+
+## Cleanup Verification 2026 11 05
+- Input: The common source after removing obsolete DOM/native screens and updating root commands.
+- Steps: Run root type checking, 15 common transport/navigation/study tests, hosted web and Android JavaScript exports, prefixed development web export, and mocked Chrome at 1280 and 360 px.
+- Observed result: Checks passed. Both browser widths restored a synthetic account, showed account details, signed out and had no horizontal overflow or runtime exceptions. Development builds made only same-origin account/notice requests. Certificate study images remained served after moving them to Expo public assets.
+- Boundary: Synthetic browser responses do not prove real Google authentication, production deployment, APK launch or physical-device behavior. Docker Engine was unavailable; Compose configuration validation passed but the Linux stack was not run.

@@ -5,7 +5,7 @@
 - Preserve every hosted web feature: account details and sign out, learning plans, daily and review queues, Day search, progress, study, quizzes, scratch memo, word notes, question editing, JSON import, source-write retries, backup and preferences.
 - Keep the existing package identity, original curriculum addresses, account-calendar calculations, server scheduling and API contracts.
 - Browser sessions stay in API-origin cookies. Native credentials stay in the existing encrypted session store. Do not copy credentials between platforms.
-- Keep the current hosted app available until feature parity is checked. Local study server behavior remains supported.
+- Keep the current hosted app available until feature parity is checked. Local web uses the same Expo screens and platform API; the standalone content server is preserved as tooling, without a separate UI.
 - Design: [Unified Client](../../design/app/20-unified-client.md)
 
 ## Example

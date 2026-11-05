@@ -46,13 +46,15 @@ export class CompanionClient {
     private store: SessionStore,
     private send: typeof fetch,
     private browser = false,
+    private developmentBrowserOrigin?: string,
   ) {
     const url = new URL(baseUrl);
     if (
       url.protocol !== "https:" &&
       !(
         url.protocol === "http:" &&
-        ["127.0.0.1", "localhost", "10.0.2.2"].includes(url.hostname)
+        (["127.0.0.1", "localhost", "10.0.2.2"].includes(url.hostname) ||
+          (this.browser && url.origin === this.developmentBrowserOrigin))
       )
     )
       throw new Error("HTTPS API required");

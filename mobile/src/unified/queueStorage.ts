@@ -1,4 +1,4 @@
-import type { NewStoredQueueRecord, QueueStorage, StoredQueueRecord } from "../../../client/src/domain/sourceWriteQueue";
+import type { NewStoredQueueRecord, QueueStorage, StoredQueueRecord } from "../../../shared/controllers/domain/sourceWriteQueue";
 const clone = <T,>(value: T): T => JSON.parse(JSON.stringify(value));
 
 /** Persist one account's queue as an ordered snapshot; failed storage stays explicitly memory-only. */

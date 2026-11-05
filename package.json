@@ -4,13 +4,12 @@
   "version": "0.0.0",
   "type": "module",
   "workspaces": [
-    "client",
     "server"
   ],
   "scripts": {
     "dev": "node scripts/dev-monorepo.js",
     "dev:server": "npm run dev --workspace server",
-    "dev:client": "npm run dev --workspace client",
+    "dev:client": "node scripts/dev-monorepo.js",
     "local": "node scripts/prod-monorepo.js",
     "local:no-build": "node scripts/prod-monorepo.js --skip-build",
     "prod": "node scripts/prod-monorepo.js --public",
@@ -20,18 +19,21 @@
     "kill:port": "node scripts/kill-port.js",
     "kill:api": "node scripts/kill-port.js 47833",
     "kill:prod-ports": "node scripts/kill-port.js 47833 47832",
-    "build": "npm run build --workspace client",
-    "typecheck": "npm run typecheck --workspace client",
-    "preview": "npm run preview --workspace client",
+    "build": "npm run export:web --prefix mobile",
+    "typecheck": "npm run typecheck --prefix mobile",
+    "preview": "node scripts/serve-static.mjs",
     "test:save-day-result": "node scripts/test-save-day-result.cjs",
     "test:stage-progression": "node scripts/test-stage-progression.cjs",
     "typecheck:mobile": "npm run typecheck --prefix mobile",
-    "test:google-auth": "node --test client/tests/google-auth.test.ts",
+    "test:google-auth": "npm run test:google-auth --prefix mobile",
     "test:mobile": "npm test --prefix mobile",
-    "build:android": "npm run build:android --prefix mobile"
+    "build:android": "npm run build:android --prefix mobile",
+    "export:web": "npm run export:web --prefix mobile",
+    "export:android": "npm run export:android --prefix mobile",
+    "test": "npm test --prefix mobile"
   },
   "devDependencies": {
-    "@types/react": "18.3.31",
-    "@types/react-dom": "18.3.7"
+    "typescript": "5.9.3",
+    "@types/react": "19.3.0"
   }
 }

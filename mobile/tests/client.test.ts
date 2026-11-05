@@ -178,3 +178,12 @@ test("server calendar rolls over in account zone without reading the device wall
   assert.equal(accountDate(clock, 0), "2026-10-28");
   assert.equal(accountDate(clock, 1000), "2026-10-29");
 });
+
+test("explicit browser development origin remains isolated from native and other HTTP origins", () => {
+  const dev = "http://192.168.0.22:3080";
+  assert.doesNotThrow(() => new CompanionClient(dev, "japanese", memory(), fetch, true, dev));
+  assert.throws(() => new CompanionClient(dev, "japanese", memory(), fetch, true), /HTTPS API required/);
+  assert.throws(() => new CompanionClient(dev, "japanese", memory(), fetch, false, dev), /HTTPS API required/);
+  assert.throws(() => new CompanionClient("http://other.example", "japanese", memory(), fetch, true, dev), /HTTPS API required/);
+  assert.throws(() => new CompanionClient(dev + "/api", "japanese", memory(), fetch, true, dev), /API origin required/);
+});

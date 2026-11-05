@@ -18,4 +18,4 @@
 The product CI runs the checks above without a platform checkout. Actual product-API integration remains an optional test in the platform repository and is run separately for each product transport.
 
 ## Hosted Google Checks
-Run npm run test:google-auth for browser transport contracts. Separate mocked Edge checks exercise the HostedGate dialog and official-button callback integration; real Google and production sessions require interactive verification. Mocked Edge checks also render HostedGate with AccountCard to cover account details, rejected sign out and successful sign out with the CSRF header.
+The browser Google exchange is covered in `mobile/tests/client.test.ts` using synthetic credentials. Obsolete DOM helper tests are replaced by the existing common client transport tests. Earlier mocked DOM checks are historical migration evidence; they do not validate the common screen implementation or real Google login.

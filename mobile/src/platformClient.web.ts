@@ -1,10 +1,10 @@
 import { CompanionClient } from "./client";
+import { API_ORIGIN, DEVELOPMENT_BROWSER_ORIGIN } from "./unified/config";
 
 /** Create the browser client using API-origin cookies and response-body CSRF tokens. */
 export function createPlatformClient() {
-  const origin = process.env.EXPO_PUBLIC_JPC_API_ORIGIN?.trim() || "https://api.jace-s.com";
-  return new CompanionClient(origin, "japanese", {
+  return new CompanionClient(API_ORIGIN, "japanese", {
     read: async () => null,
     write: async () => undefined,
-  }, (input, init) => fetch(input, init), true);
+  }, (input, init) => fetch(input, init), true, DEVELOPMENT_BROWSER_ORIGIN);
 }

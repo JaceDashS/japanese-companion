@@ -4,7 +4,7 @@
 An independently versioned study application, containing a web client and a native mobile client.
 
 ## Shared Learning Rules
-The TypeScript source in `shared/` plus the existing product controllers in `client/src/domain/` reused by the common Expo screen tree. Generated adapters bind platform API, storage and account date boundaries rather than duplicating scheduling or grading.
+The TypeScript source in `shared/` plus the existing product controllers in `shared/controllers/domain/` reused by the common Expo screen tree. Generated adapters bind platform API, storage and account date boundaries rather than duplicating scheduling or grading.
 
 ## Platform
 The separate repository that provides account authentication, access checks, user records and the main site pages.
@@ -15,16 +15,16 @@ The separate repository that provides account authentication, access checks, use
 - Expected result: The account record is updated without modifying the curriculum source.
 
 ## Browser Google Sign In
-The official GIS button exchanging a nonce-bound Google credential for the existing platform account session. Used only by the hosted browser login dialog in this change. Code: GoogleSignIn, createHostedGoogleAuth, hostedGoogleAuth.
+The official GIS button exchanging a nonce-bound Google credential for the existing platform account session. Used only by the hosted browser login dialog in this change. Code: GoogleButton, CompanionClient.googleConfig, CompanionClient.googleChallenge, CompanionClient.googleLogin.
 
 ## Quiz Scratch Memo
 - Definition: A one-line, never-saved text field on a quiz question that resets when the question changes
-- Code: `QuizMemo`, `.jc-quiz-memo`
+- Code: `QuizMemo`, `mobile/src/unified/SessionScreen.tsx`
 - Avoid: "memo" alone, which refers to the saved word memo (`memoPayload`)
 
 ## Account Card
 - Definition: The settings card that shows the signed-in platform account and signs out of the shared session
-- Code: `AccountCard`, `useHostedSession`, `fetchHostedAccount`, `logoutFromHost`; common Expo `SettingsScreen`, `CompanionClient.account`, `CompanionClient.logout`
+- Code: common Expo `SettingsScreen`, `CompanionClient.account`, `CompanionClient.logout`
 - Avoid: "My Page", which is the main site page where profile changes happen
 
 ## Source Identity

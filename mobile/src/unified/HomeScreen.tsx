@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { ScrollView, View } from "react-native";
-import { toLearningPathKey } from "../../.generated/product/client/src/domain/learningPath.js";
+import { toLearningPathKey } from "../../.generated/product/shared/controllers/domain/learningPath.js";
 import { getStageLabel } from "../../.generated/product/shared/domain/constants.js";
 import type { LearningPath } from "../../../shared/domain/studyTypes";
 import type { StudyModel } from "./useStudyModel";

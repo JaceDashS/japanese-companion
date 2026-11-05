@@ -1,13 +1,13 @@
 #!/usr/bin/env node
-// 호스팅 모드 컨테이너용 정적 파일 서버. 빌드된 client/dist를 BASE_PATH(예: /jlpt-companion/) 아래에서 제공한다.
+// 호스팅 모드 컨테이너용 정적 파일 서버. 빌드된 mobile/dist/web를 BASE_PATH(예: /jlpt-companion/) 아래에서 제공한다.
 // 데이터와 로그인은 같은 사이트의 API가 맡으므로 이 서버는 파일만 내보낸다.
 import fs from "node:fs";
 import http from "node:http";
 import path from "node:path";
 
-const port = Number(process.env.PORT ?? 80);
-const host = process.env.HOST ?? "0.0.0.0";
-const staticDir = path.resolve(process.env.STATIC_DIR ?? "client/dist");
+const port = Number(process.env.PORT ?? 47832);
+const host = process.env.HOST ?? "127.0.0.1";
+const staticDir = path.resolve(process.env.STATIC_DIR ?? "mobile/dist/web");
 const basePath = `/${String(process.env.BASE_PATH ?? "/").replace(/^\/+|\/+$/g, "")}/`.replace(/^\/\/$/, "/");
 
 const contentTypes = {

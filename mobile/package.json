@@ -11,7 +11,9 @@
     "typecheck": "npm run prepare:domain && tsc --noEmit",
     "test": "npm run prepare:domain && tsx --test tests/*.test.ts",
     "build:android": "node scripts/build-android.mjs",
-    "prepare:domain": "node scripts/prepare-domain.mjs"
+    "prepare:domain": "node scripts/prepare-domain.mjs",
+    "web": "node scripts/expo.mjs start --web",
+    "test:google-auth": "tsx --test --test-name-pattern=\"browser|Google|account|logout\" tests/client.test.ts"
   },
   "dependencies": {
     "@expo/metro-runtime": "~58.0.15",

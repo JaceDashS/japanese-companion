@@ -1,23 +1,23 @@
 import { useEffect, useState } from "react";
 import type { StudyState, SessionView, StudyItem, LearningPath } from "../../../shared/domain/studyTypes";
-import { buildAppState, listAvailableBooks, loadCurriculumFiles } from "../../.generated/product/client/src/domain/curriculumFiles.js";
-import { useHomeDashboardData } from "../../.generated/product/client/src/domain/homeDashboard.js";
-import { useLearningPlanSync, updateDailyLearningCount } from "../../.generated/product/client/src/domain/learningPlanSync.js";
-import { createSourcePersistence, useSourceWriteQueue } from "../../.generated/product/client/src/domain/sourcePersistence.js";
-import { createProgressActions } from "../../.generated/product/client/src/domain/progressActions.js";
-import { createSessionController } from "../../.generated/product/client/src/domain/sessionController.js";
-import { createSessionOpeners } from "../../.generated/product/client/src/domain/sessionOpeners.js";
-import { useSessionSelection } from "../../.generated/product/client/src/domain/sessionSelectors.js";
-import { createQuizInputActions } from "../../.generated/product/client/src/domain/sessionInput.js";
-import { getPathDay, replaceDay, isQuizTarget, shuffleArray, getDisplayDayIndex, getDisplayItemId } from "../../.generated/product/client/src/domain/studyHelpers.js";
-import { buildProblemPayload, createProblemDraft, normalizeJsonBlock, normalizeProblem } from "../../.generated/product/client/src/domain/problem.js";
+import { buildAppState, listAvailableBooks, loadCurriculumFiles } from "../../.generated/product/shared/controllers/domain/curriculumFiles.js";
+import { useHomeDashboardData } from "../../.generated/product/shared/controllers/domain/homeDashboard.js";
+import { useLearningPlanSync, updateDailyLearningCount } from "../../.generated/product/shared/controllers/domain/learningPlanSync.js";
+import { createSourcePersistence, useSourceWriteQueue } from "../../.generated/product/shared/controllers/domain/sourcePersistence.js";
+import { createProgressActions } from "../../.generated/product/shared/controllers/domain/progressActions.js";
+import { createSessionController } from "../../.generated/product/shared/controllers/domain/sessionController.js";
+import { createSessionOpeners } from "../../.generated/product/shared/controllers/domain/sessionOpeners.js";
+import { useSessionSelection } from "../../.generated/product/shared/controllers/domain/sessionSelectors.js";
+import { createQuizInputActions } from "../../.generated/product/shared/controllers/domain/sessionInput.js";
+import { getPathDay, replaceDay, isQuizTarget, shuffleArray, getDisplayDayIndex, getDisplayItemId } from "../../.generated/product/shared/controllers/domain/studyHelpers.js";
+import { buildProblemPayload, createProblemDraft, normalizeJsonBlock, normalizeProblem } from "../../.generated/product/shared/controllers/domain/problem.js";
 import { normalizeSrsSettings } from "../../.generated/product/shared/domain/srsPreferences.js";
 import { applyQuizResultForDay, applyReviewResultForDay } from "../../.generated/product/shared/domain/srs.js";
-import { mergeCurriculumFromSource } from "../../.generated/product/client/src/domain/curriculumSource.js";
-import { applyDayDecompositionImport, resetDayDecompositions, resetDayProblems } from "../../.generated/product/client/src/domain/dayClipboardImporter.js";
-import { buildDayWordCopyPayload } from "../../.generated/product/client/src/domain/dayClipboardHelpers.js";
+import { mergeCurriculumFromSource } from "../../.generated/product/shared/controllers/domain/curriculumSource.js";
+import { applyDayDecompositionImport, resetDayDecompositions, resetDayProblems } from "../../.generated/product/shared/controllers/domain/dayClipboardImporter.js";
+import { buildDayWordCopyPayload } from "../../.generated/product/shared/controllers/domain/dayClipboardHelpers.js";
 import { apiFetch, apiUrl, hydrateState, saveState } from "./runtime";
-import { readAppPreferences, writeAppPreferences } from "../../.generated/product/client/src/domain/appPreferences.js";
+import { readAppPreferences, writeAppPreferences } from "../../.generated/product/shared/controllers/domain/appPreferences.js";
 import { identifyStudyState, displayItemId } from "./identity";
 
 export type Preferences = {

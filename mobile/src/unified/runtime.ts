@@ -1,8 +1,8 @@
 import { Platform } from "react-native";
 import { createPlatformClient } from "../platformClient";
 import { accountDate, type Clock } from "../client";
-import { configureQueueStorage } from "../../.generated/product/client/src/domain/sourceWriteQueue.js";
-import { getStorageScope, scopedStorageKey } from "../../.generated/product/client/src/data/storageScope.js";
+import { configureQueueStorage } from "../../.generated/product/shared/controllers/domain/sourceWriteQueue.js";
+import { getStorageScope, scopedStorageKey } from "../../.generated/product/shared/controllers/data/storageScope.js";
 import * as storage from "./storage";
 import { NativeQueueStorage } from "./queueStorage";
 

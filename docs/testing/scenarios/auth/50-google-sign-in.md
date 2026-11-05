@@ -21,7 +21,7 @@
 - Input: Successful Google response with user and csrfToken, with remember enabled or disabled.
 - Steps: Cache the response CSRF token, continue the app access check, and perform a subsequent authenticated request.
 - Expected result: Remember is included in the exchange and the later request can use the issued CSRF token despite the API host-only cookie.
-- Test: `client/tests/google-auth.test.ts`.
+- Test: `mobile/tests/client.test.ts`.
 
 ## Main Site Launch
 - Input: Signed-out user clicks this app from the platform app list.
