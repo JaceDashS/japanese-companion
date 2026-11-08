@@ -17,6 +17,8 @@ import { Notices } from "./Notices";
 import * as storage from "./storage";
 import { useHomeFocus } from "./useHomeFocus";
 import { SITE_ORIGIN } from "./config";
+import { Chrome } from "./Chrome";
+import { isDesktopLayout } from "./responsive";
 type Gate = { kind: "checking" } | { kind: "login" } | { kind: "password" } | { kind: "blocked" } | { kind: "ready"; user: User; boot: BootData };
 
 /** Common Expo root; each account gets a new study screen lifecycle. */
@@ -63,11 +65,11 @@ function StudyApp({ boot, user, onLogout, onReset }: { boot: BootData; user: Use
   const [today, setToday] = useState(getTodayString);
   const [display, updateDisplay] = useState<Display>({ theme: "dark", device: "auto" });
   const [toast, setToast] = useState<{ text: string; tone?: string } | null>(null);
-  const width = useWindowDimensions().width;
+  const { width, height } = useWindowDimensions();
   const notify = useCallback((text: string, tone?: string) => setToast({ text, tone }), []);
   const model = useStudyModel(boot, today, notify);
   useHomeFocus(!model.session, model.refresh, (error) => notify(String(error), "error"));
-  const isPhone = display.device === "phone" || (display.device === "auto" && width <= 768);
+  const isPhone = !isDesktopLayout(width, height, display.device);
   const c = palettes[display.theme];
   useEffect(() => { void Promise.all([storage.readAsync("jpc-theme-v1"), storage.readAsync("jpc-device-mode-v1")]).then(([theme, device]) => updateDisplay({ theme: theme === "light" || theme === "washi" ? "light" : "dark", device: device === "phone" || device === "pc" ? device : "auto" })); }, []);
   useEffect(() => { if (!toast) return; const timer = setTimeout(() => setToast(null), 5000); return () => clearTimeout(timer); }, [toast]);
@@ -83,9 +85,9 @@ function StudyApp({ boot, user, onLogout, onReset }: { boot: BootData; user: Use
   return <Theme.Provider value={c}><View style={{ flex: 1, backgroundColor: c.bg }}><StatusBar style={display.theme === "light" ? "dark" : "light"} /><Notices />
     {toast && <View style={{ paddingHorizontal: 16, paddingVertical: 8 }}><Text accessibilityRole={toast.tone === "error" ? "alert" : "summary"} style={{ color: toast.tone === "error" ? c.error : c.good }}>{toast.text}</Text></View>}
     {model.session ? <SessionScreen key={model.session.unitId + ":" + model.session.dayId} model={model} isPhone={isPhone} notify={notify} /> : <>
-      <View style={{ paddingHorizontal: 16, paddingTop: 10 }}><Label muted>Japanese Companion · {user.username}</Label></View>
-      {tab === "settings" ? <SettingsScreen model={model} display={display} setDisplay={setDisplay} notify={notify} onLogout={onLogout} onReset={onReset} /> : <HomeScreen model={model} tab={tab} today={today} notify={notify} />}
-      <View style={[layout.row, { padding: 10, borderTopWidth: 1, borderColor: c.border }]}>{(["today", "days", "progress", "settings"] as const).map((key) => <Action key={key} title={{ today: "오늘", days: "Day", progress: "진행률", settings: "설정" }[key]} selected={tab === key} onPress={() => setTab(key)} />)}<Action title="새로고침" onPress={() => void model.refresh().catch((error) => notify(String(error), "error"))} /></View>
+      <Chrome desktop={!isPhone} tab={tab} today={today} onNavigate={setTab}>
+        {tab === "settings" ? <SettingsScreen model={model} display={display} setDisplay={setDisplay} notify={notify} onLogout={onLogout} onReset={onReset} /> : <HomeScreen model={model} tab={tab} today={today} desktop={!isPhone} notify={notify} />}
+      </Chrome>
     </>}
   </View></Theme.Provider>;
 }

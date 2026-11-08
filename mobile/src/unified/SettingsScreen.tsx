@@ -40,7 +40,7 @@ export function SettingsScreen({ model, display, setDisplay, notify, onLogout, o
     ["로그인 방식", account.hasLocalPassword === false ? "Google 전용" : "아이디·비밀번호"],
     ["가입일", time(account.createdAt)], ["마지막 로그인", time(account.lastLoginAt)],
   ] : [];
-  return <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={layout.body}>
+  return <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={[layout.body, { maxWidth: 900 }]}>
     <Label large>설정</Label>
     <Card title="계정">{account ? rows.map(([name, value]) => <View key={name} style={{ gap: 2 }}><Label muted>{name}</Label><Label>{value}</Label></View>) : <Label muted>계정 정보를 불러오는 중</Label>}
       <Action title="메인 사이트에서 계정 관리" onPress={() => void Linking.openURL(SITE_ORIGIN + "/#my-page")} />

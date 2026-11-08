@@ -24,3 +24,7 @@ flowchart LR
 - Expected result: Both outputs contain the same updated screen and use the existing account-bound API.
 - Design: [Unified Client](../design/app/20-unified-client.md)
 - Product rules: [Product Clients](../design/app/10-product-clients.md)
+
+## Responsive Presentation
+
+The shared Expo screens select desktop or compact composition from available logical dimensions. Browser and Android use one screen tree; session and storage adapters remain platform specific. See [Responsive Layout Design](../design/app/30-responsive-layout.md).

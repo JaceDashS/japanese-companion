@@ -7,19 +7,11 @@ import {
   TextInput,
   View,
 } from "react-native";
-export const colors = {
-  bg: "#161a20",
-  panel: "#222833",
-  text: "#f4efe4",
-  muted: "#b6b7b8",
-  accent: "#e4b363",
-  border: "#424955",
-  error: "#ff9292",
-  good: "#a7d6a2",
-};
+import { palettes } from "./unified/ui";
+export const colors = palettes.dark;
 export const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: colors.bg },
-  body: { padding: 20, gap: 16 },
+  body: { padding: 20, gap: 16, width: "100%", maxWidth: 560, alignSelf: "center" },
   card: {
     backgroundColor: colors.panel,
     borderRadius: 16,

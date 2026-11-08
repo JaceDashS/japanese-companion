@@ -1,26 +1,26 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 
-const dark = { bg: "#161a20", panel: "#222833", text: "#f4efe4", muted: "#b6b7b8", border: "#424955", accent: "#e4b363", error: "#ff9292", good: "#a7d6a2" };
-const light = { bg: "#f5f5f0", panel: "#ffffff", text: "#262a30", muted: "#59616e", border: "#cbd0d5", accent: "#805800", error: "#ad2626", good: "#23642d" };
+const dark = { bg: "#0e0d10", header: "#131217", panel: "#17161c", raised: "#1d1c23", text: "#ece8f0", muted: "#a49dae", border: "#2e2b36", accent: "#f2809f", soft: "#34212a", error: "#ff9292", good: "#8fc9a0" };
+const light = { bg: "#f4f1ea", header: "#faf8f3", panel: "#ffffff", raised: "#f2eee6", text: "#23202a", muted: "#5d5768", border: "#ddd6c9", accent: "#b23d63", soft: "#f5e3e8", error: "#ad2626", good: "#3f8f5c" };
 export const Theme = createContext(dark);
 export const palettes = { dark, light };
 export const layout = StyleSheet.create({
-  body: { padding: 16, gap: 16, width: "100%", maxWidth: 1280, alignSelf: "center" },
+  body: { padding: 20, paddingBottom: 32, gap: 18, width: "100%", maxWidth: 1320, alignSelf: "center" },
   row: { flexDirection: "row", flexWrap: "wrap", gap: 8, alignItems: "center" },
   stack: { gap: 12 },
 });
 export function Label({ children, muted = false, large = false, error = false }: { children: React.ReactNode; muted?: boolean; large?: boolean; error?: boolean }) {
   const c = useContext(Theme);
-  return <Text selectable style={{ color: error ? c.error : muted ? c.muted : c.text, fontSize: large ? 23 : muted ? 14 : 17, lineHeight: large ? 34 : 26, fontWeight: large ? "700" : "400" }}>{children}</Text>;
+  return <Text selectable style={{ color: error ? c.error : muted ? c.muted : c.text, fontSize: large ? 21 : muted ? 13 : 15, lineHeight: large ? 30 : 23, fontWeight: large ? "700" : "400" }}>{children}</Text>;
 }
 export function Card({ title, children }: { title?: string; children: React.ReactNode }) {
   const c = useContext(Theme);
-  return <View style={{ padding: 16, borderRadius: 14, gap: 12, backgroundColor: c.panel, borderWidth: 1, borderColor: c.border }}>{title && <Label large>{title}</Label>}{children}</View>;
+  return <View style={{ padding: 20, borderRadius: 18, gap: 14, backgroundColor: c.panel, borderWidth: 1, borderColor: c.border }}>{title && <Label large>{title}</Label>}{children}</View>;
 }
 export function Action({ title, onPress, disabled = false, selected = false, testID }: { title: string; onPress: () => void; disabled?: boolean; selected?: boolean; testID?: string }) {
   const c = useContext(Theme);
-  return <Pressable accessibilityRole="button" accessibilityState={{ disabled, selected }} disabled={disabled} onPress={onPress} testID={testID} style={({ pressed }) => ({ borderWidth: selected ? 2 : 1, borderColor: selected ? c.accent : c.border, borderRadius: 10, paddingVertical: 10, paddingHorizontal: 13, minHeight: 44, justifyContent: "center", opacity: disabled ? 0.4 : pressed ? 0.7 : 1, maxWidth: "100%" })}><Text style={{ fontSize: 16, color: c.text, flexShrink: 1 }}>{title}</Text></Pressable>;
+  return <Pressable accessibilityRole="button" accessibilityState={{ disabled, selected }} disabled={disabled} onPress={onPress} testID={testID} style={({ pressed }) => ({ borderWidth: 1, backgroundColor: selected ? c.soft : c.raised, borderColor: selected ? c.accent : c.border, borderRadius: 10, paddingVertical: 10, paddingHorizontal: 13, minHeight: 44, justifyContent: "center", opacity: disabled ? 0.4 : pressed ? 0.7 : 1, maxWidth: "100%" })}><Text style={{ fontSize: 14, fontWeight: "600", color: selected ? c.accent : c.text, flexShrink: 1 }}>{title}</Text></Pressable>;
 }
 export function Field({ label, value, onChangeText, multiline = false, testID, onBlur }: { label: string; value: string; onChangeText: (value: string) => void; multiline?: boolean; testID?: string; onBlur?: () => void }) {
   const c = useContext(Theme);

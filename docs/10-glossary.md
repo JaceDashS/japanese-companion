@@ -35,3 +35,7 @@ The official GIS button exchanging a nonce-bound Google credential for the exist
 ## Native Google Challenge
 
 A one-use server nonce bound to the Android Google account picker token. Code: nativeGoogleChallenge, nativeGoogleLogin and signInWithNativeGoogle. Separate from the browser cookie challenge.
+
+## Desktop Layout
+- Definition: The wide composition with desktop navigation and dashboard columns, automatically enabled at width 1024 and short side 600 logical pixels or above. Existing explicit PC preferences override auto.
+- Code: `isDesktopLayout`. Logical pixels are layout units, not physical display pixels.

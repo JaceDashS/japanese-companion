@@ -123,3 +123,7 @@ flowchart LR
 - Output: Same-origin API, notice and profile requests against isolated development services, with the existing CSRF/account bindings.
 - Code: `mobile/src/unified/config.ts` exports `DEVELOPMENT_BROWSER_ORIGIN`; `mobile/src/platformClient.web.ts` passes it to `CompanionClient`. Only browser mode accepts HTTP for that exact explicit origin. Ordinary builds and native HTTPS checks are unchanged. `mobile/app.config.js` uses `EXPO_PUBLIC_BASE_PATH` for prefixed web exports.
 - Example: Open the LAN development URL with the explicit development build; it calls that same origin rather than production. A different HTTP API or native caller is still rejected.
+
+## Restored Presentation
+
+The common screen implementation restores responsive desktop and compact compositions and the product visual identity. Layout and theme details: [Responsive Layout](30-responsive-layout.md).
