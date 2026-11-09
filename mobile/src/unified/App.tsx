@@ -11,7 +11,7 @@ import { loadStudy, useStudyModel, type BootData } from "./useStudyModel";
 import { HomeScreen } from "./HomeScreen";
 import { SessionScreen } from "./SessionScreen";
 import { SettingsScreen, type Display } from "./SettingsScreen";
-import { Action, Label, layout, palettes, Theme } from "./ui";
+import { Action, Device, gradient, Label, layout, palettes, Theme, Toast } from "./ui";
 import { GoogleButton } from "./GoogleButton";
 import { Notices } from "./Notices";
 import * as storage from "./storage";
@@ -50,7 +50,7 @@ export default function App() {
   useEffect(() => { void action(async () => enter(await client.restore())).catch(() => undefined); }, [action, enter]);
   useEffect(() => listenForExpiry(() => { setStorageScope(""); setGate({ kind: "login" }); setError("로그인이 만료되었습니다. 다시 로그인해 주세요."); }), []);
   const logout = () => action(async () => { await client.logout(); setStorageScope(""); setGate({ kind: "login" }); });
-  return <SafeAreaProvider><SafeAreaView style={{ flex: 1, backgroundColor: palettes.dark.bg }}><StatusBar style="light" />
+  return <SafeAreaProvider><SafeAreaView style={[{ flex: 1, backgroundColor: palettes.dark.bg }, gradient(`radial-gradient(900px 480px at 85% -10%, ${palettes.dark.glow}, transparent 70%)`)]}><StatusBar style="light" />
     {gate.kind !== "ready" && <Notices />}
     {gate.kind === "checking" && <>{busy || !error ? <Busy /> : <View style={layout.body}><Label error>{error}</Label><Action title="다시 불러오기" onPress={() => void action(async () => enter(await client.restore())).catch(() => undefined)} /></View>}</>}
     {gate.kind === "login" && <LoginScreen name="Japanese Companion" busy={busy} error={error} remember={remember} onRememberChange={setRemember} onLogin={(username, password) => void action(async () => enter(await client.login(username, password, remember))).catch(() => undefined)}><GoogleButton client={client} remember={remember} disabled={busy} onBusyChange={setBusy} onLoggedIn={(user) => action(() => enter(user))} /></LoginScreen>}
@@ -82,12 +82,13 @@ function StudyApp({ boot, user, onLogout, onReset }: { boot: BootData; user: Use
     return () => { active = false; clearInterval(tick); clearInterval(refresh); subscription.remove(); };
   }, [notify]);
   const setDisplay = (next: Display) => { updateDisplay(next); void storage.write("jpc-theme-v1", next.theme).catch(() => undefined); void storage.write("jpc-device-mode-v1", next.device).catch(() => undefined); };
-  return <Theme.Provider value={c}><View style={{ flex: 1, backgroundColor: c.bg }}><StatusBar style={display.theme === "light" ? "dark" : "light"} /><Notices />
-    {toast && <View style={{ paddingHorizontal: 16, paddingVertical: 8 }}><Text accessibilityRole={toast.tone === "error" ? "alert" : "summary"} style={{ color: toast.tone === "error" ? c.error : c.good }}>{toast.text}</Text></View>}
+  const dueCount = model.dashboard.reviewDue.length;
+  return <Theme.Provider value={c}><Device.Provider value={{ phone: isPhone }}><View style={[{ flex: 1, backgroundColor: c.bg }, gradient(`radial-gradient(900px 480px at 85% -10%, ${c.glow}, transparent 70%)`)]}><StatusBar style={display.theme === "light" ? "dark" : "light"} /><Notices />
     {model.session ? <SessionScreen key={model.session.unitId + ":" + model.session.dayId} model={model} isPhone={isPhone} notify={notify} /> : <>
-      <Chrome desktop={!isPhone} tab={tab} today={today} onNavigate={setTab}>
-        {tab === "settings" ? <SettingsScreen model={model} display={display} setDisplay={setDisplay} notify={notify} onLogout={onLogout} onReset={onReset} /> : <HomeScreen model={model} tab={tab} today={today} desktop={!isPhone} notify={notify} />}
+      <Chrome desktop={!isPhone} tab={tab} today={today} dueCount={dueCount} onNavigate={setTab}>
+        {tab === "settings" ? <SettingsScreen phone={isPhone} model={model} display={display} setDisplay={setDisplay} notify={notify} onLogout={onLogout} onReset={onReset} /> : <HomeScreen model={model} tab={tab} today={today} desktop={!isPhone} notify={notify} />}
       </Chrome>
     </>}
-  </View></Theme.Provider>;
+    {toast && <Toast text={toast.text} tone={toast.tone} phone={isPhone && !model.session} />}
+  </View></Device.Provider></Theme.Provider>;
 }

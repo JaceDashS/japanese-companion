@@ -3,7 +3,8 @@
 ## Requirements
 - Use the same Expo React Native screens in browser and Android. Keep platform session and storage adapters.
 - Automatic desktop layout requires available width at least 1024 and the shorter available dimension at least 600 logical pixels. Existing manual phone and PC preferences remain explicit overrides.
-- Restore Japanese ink and sakura colors, desktop top navigation, dashboard columns and phone bottom tabs. Restore Certificate midnight and orange colors, desktop rail and phone bottom tabs. Give English a distinct ink and mint identity, responsive dashboard, progress cards and compact navigation.
+- Restore Japanese ink and sakura colors, desktop top navigation, dashboard columns and phone bottom tabs. The other products follow their own repositories.
+- Rebuild the former web parts, not only the colors: stat tiles, chips, tinted Day cards, Day tiles, queue actions, the session top and bottom bars, numbered choices, verdicts, item tiles, sheets, switches, segments and the login card. Browser and Android use the same parts.
 - Keep navigation, account actions, study, quizzes, source writes and saved progress functional. Rotation and window resizing must not reset study state.
 - Background colors cover the viewport and scrolling content without a repeating gradient or visible rectangular seam.
 - Design: [Responsive Layout](../../design/app/30-responsive-layout.md)

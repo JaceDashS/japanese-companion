@@ -14,6 +14,12 @@
 - Expected result: Manual preferences override automatic detection where the product exposes the setting.
 - Test: The same boundary regression verifies explicit policy overrides.
 
+## Former UI Parity
+- Input: The former web build (8fa4351 parent) and the current web export, both against the same local synthetic API and JLPT N1 data.
+- Steps: Capture home, Day, settings, study, quiz, word data sheet, login and the light theme at 1440x900 and 390x844, and compare them side by side.
+- Expected result: Layout, colors, sizes and parts match; only native controls differ (segments instead of select boxes, text date fields instead of date pickers).
+- Observed 2026-11-09: All listed screens matched. Gaps found during the comparison were fixed: note text size and table cells, raw `<br>` in tables, full-width quiz buttons and account value size.
+
 ## Resize And Study
 - Input: An authenticated test account with sample content, desktop and compact viewports.
 - Steps: Navigate home and settings, begin study, resize or rotate, use the existing quiz and return controls, and scroll to the bottom.
