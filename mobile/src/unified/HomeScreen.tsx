@@ -4,11 +4,13 @@ import { toLearningPathKey } from "../../.generated/product/shared/controllers/d
 import { getStageLabel } from "../../.generated/product/shared/domain/constants.js";
 import type { StudyModel } from "./useStudyModel";
 import { Card, layout, Segment, T } from "./ui";
+import { BookSelect } from "./BookSelect";
 import { DayCard, DayGrid, ProgressPanel, RecentDays, StageChart, Stats, WordActionCard } from "./Dashboard";
 
 /** Today, Day and progress tabs in the former dashboard composition, backed by the shared dashboard builders. */
 export function HomeScreen({ model, tab, today, desktop, notify }: { desktop: boolean; model: StudyModel; tab: "today" | "days" | "progress"; today: string; notify: (text: string, tone?: string) => void }) {
   const [refreshing, setRefreshing] = useState(false);
+  const [switchingBook, setSwitchingBook] = useState(false);
   const { dashboard: d, srs } = model;
   const phone = !desktop;
   const pending = new Set(model.queue.items.filter((entry: any) => entry.status !== "failed").map((entry: any) => entry.learningPath && toLearningPathKey(entry.learningPath)));
@@ -16,7 +18,10 @@ export function HomeScreen({ model, tab, today, desktop, notify }: { desktop: bo
   const learning = d.pendingLearningRows.filter((row: any) => !pending.has(toLearningPathKey(row.path)));
   const rows = d.allDayRows;
   const refresh = () => { setRefreshing(true); model.refresh().catch((error) => notify(String(error), "error")).finally(() => setRefreshing(false)); };
-  const books = model.books.length > 1 && <View style={{ flexDirection: "row", alignItems: "center", gap: 10, maxWidth: desktop ? 420 : undefined }}>
+  const books = phone ? <BookSelect books={model.books} value={model.book} disabled={switchingBook} onChange={(id) => {
+    setSwitchingBook(true);
+    void model.switchBook(id).catch((error) => notify(String(error), "error")).finally(() => setSwitchingBook(false));
+  }} /> : model.books.length > 1 && <View style={{ flexDirection: "row", alignItems: "center", gap: 10, maxWidth: desktop ? 420 : undefined }}>
     <T size={12.2} tone="dim">교재</T>
     <Segment options={model.books.map((book: any) => ({ key: book.id, label: book.title }))} value={model.book} onChange={(id) => void model.switchBook(String(id)).catch((error) => notify(String(error), "error"))} />
   </View>;
@@ -45,7 +50,7 @@ export function HomeScreen({ model, tab, today, desktop, notify }: { desktop: bo
   if (tab === "days") content = <Card title="Day 선택" hint={`${rows.length}개`}><DayGrid rows={rows} phone={phone} onOpen={model.openLearningDay} /></Card>;
   else if (tab === "progress") content = <Card title="전체 진행률">{progress}</Card>;
   else if (phone) content = <>
-    {stats}{books}
+    {stats}
     <Card title="오늘 할 학습" hint={`복습 ${reviews.length} · 신규 ${learning.length}`}>{queue}</Card>
     <Card title="복습 회차 분포" hint={`${rows.length}개`}>{stageChart}</Card>
     <Card title="최근 학습">{recent}</Card>
@@ -65,5 +70,5 @@ export function HomeScreen({ model, tab, today, desktop, notify }: { desktop: bo
       </View>
     </View>
   </>;
-  return <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={phone ? layout.phoneBody : layout.body} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}>{content}</ScrollView>;
+  return <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={phone ? layout.phoneBody : layout.body} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}>{phone && books}{content}</ScrollView>;
 }

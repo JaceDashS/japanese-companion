@@ -7,6 +7,7 @@
 - Rebuild the former web parts, not only the colors: stat tiles, chips, tinted Day cards, Day tiles, queue actions, the session top and bottom bars, numbered choices, verdicts, item tiles, sheets, switches, segments and the login card. Browser and Android use the same parts.
 - Keep navigation, account actions, study, quizzes, source writes and saved progress functional. Rotation and window resizing must not reset study state.
 - Background colors cover the viewport and scrolling content without a repeating gradient or visible rectangular seam.
+- Mobile forms show a labelled book dropdown above today, Day and progress content, including when only one book exists. Desktop keeps its existing segmented book selector and layout.
 - Design: [Responsive Layout](../../design/app/30-responsive-layout.md)
 
 ## Example

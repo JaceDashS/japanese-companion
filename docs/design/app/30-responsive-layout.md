@@ -45,3 +45,10 @@ flowchart LR
 
 - `mobile/src/ui.tsx` keeps the loading indicator. `mobile/src/unified/SettingsScreen.tsx` uses the main content width with former settings rows, segments and a collapsible debug log.
 - Day and chapter listings use wrapped desktop card grids and compact stacked cards. Existing session panels receive the same dimension policy and theme without a separate screen implementation.
+
+## Mobile Book Selection
+- Input: `model.books`, `model.book` and the existing `switchBook` callback in `mobile/src/unified/HomeScreen.tsx`.
+- Output: Mobile-only full-width book selection above today, Day and progress content. Desktop retains the existing Segment and its multiple-book visibility rule.
+- Code: `mobile/src/unified/BookSelect.tsx` exports `BookSelect`. Web renders a native labelled select with 44 pixel minimum height; Android uses the existing themed Sheet with radio options. Empty lists disable selection. Home disables the control while switching and reports existing model errors through notify.
+- Scenario: With two books at 390 pixels, choose the second book. Steps: Select its option, invoke switchBook and load its existing account-scoped state. Expected result: The selected book changes without modifying source addresses or saved progress; PC retains its previous controls.
+- All scenarios: [Mobile Book Dropdown](../../testing/scenarios/app/30-responsive-layout.md#mobile-book-dropdown).

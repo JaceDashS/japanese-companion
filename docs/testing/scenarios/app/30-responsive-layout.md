@@ -17,7 +17,7 @@
 ## Former UI Parity
 - Input: The former web build (8fa4351 parent) and the current web export, both against the same local synthetic API and JLPT N1 data.
 - Steps: Capture home, Day, settings, study, quiz, word data sheet, login and the light theme at 1440x900 and 390x844, and compare them side by side.
-- Expected result: Layout, colors, sizes and parts match; only native controls differ (segments instead of select boxes, text date fields instead of date pickers).
+- Expected result: Layout, colors, sizes and parts match; native controls may differ. Mobile book selection uses a dropdown, PC keeps its previous segments, and text date fields remain in place of date pickers.
 - Observed 2026-11-09: All listed screens matched. Gaps found during the comparison were fixed: note text size and table cells, raw `<br>` in tables, full-width quiz buttons and account value size.
 
 ## Resize And Study
@@ -26,3 +26,10 @@
 - Expected result: State remains intact, desktop columns and compact tabs stay usable, text is readable, no horizontal page overflow or background seams appear, and account and study actions retain their existing API behavior.
 - Observed 2026-11-09 in Chrome with local synthetic API data: desktop top navigation and dashboard columns, compact header and bottom tabs at 390x844 and 915x412, desktop at 1280x800, Day grid navigation and account settings. Day 1 study remained active when resized from tablet to landscape phone; the desktop item panel disappeared and page width matched viewport width. The restored dark screen was visually inspected. Web and Android JavaScript exports passed, along with 19 regressions and type checking.
 - Limit: Synthetic browser responses do not verify production persistence. Android JavaScript exports do not establish APK or physical-device behavior.
+
+## Mobile Book Dropdown
+- Input: Two book options at 390x844, a long selected title and the existing desktop HomeScreen.
+- Steps: Change the mobile dropdown, inspect width, then inspect the desktop render branch.
+- Expected result: Mobile selection invokes the existing switchBook callback, remains disabled during the operation and reports failures. Today, Day and progress share the selector. Desktop keeps the existing multiple-book Segment without a dropdown.
+- Verified 2026-11-10: The actual BookSelect component changed JLPT N1 to JLPT N2 in a local synthetic browser harness. Its mobile width stayed within 390 pixels. Desktop branch preservation was checked in the HomeScreen diff. Production persistence and physical Android interaction were not exercised.
+- Validation: Type checking, 19 existing regressions and web and Android JavaScript exports passed. Android export required running outside the Windows sandbox after Hermes compilation failed within it; no code change was needed for that retry.
