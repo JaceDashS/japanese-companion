@@ -58,3 +58,10 @@ The shared modules expose the following identifiers. Generated adapters preserve
 - Scenario: Type a note on question 3, move to question 4 → the field is empty.
 - Spec: [Quiz Scratch Memo](../../specs/app/10-product-clients.md#quiz-scratch-memo)
 - All scenarios: [Quiz Scratch Memo Scenarios](../../testing/scenarios/app/10-product-clients.md#quiz-scratch-memo-scenarios)
+
+## Book Display Names
+- Input: asset/jlpt-one-book-n1.json and asset/jlpt-short-term.json combined metadata.
+- Output: Titles n1 and n2 from getAvailableBooks in shared/data/initialState.ts, re-exported through shared/controllers/domain/curriculumFiles.ts.
+- Only meta.title changes; filenames, levels, Unit and item data remain unchanged. Hosted source has matching metadata in the platform repository.
+- Example input: Existing jlpt-one-book-n1 account state. Steps: Read renamed metadata. Expected result: n1 is displayed without changing its state key.
+- Scenarios: [Book Display Names](../../testing/scenarios/app/10-product-clients.md#book-display-names).

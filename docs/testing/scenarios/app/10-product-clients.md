@@ -46,3 +46,9 @@
 - Input: A question without choices, or the certificate app.
 - Steps: Open the question.
 - Expected result: No memo field is shown.
+
+## Book Display Names
+- Input: Both original combined files and their renamed versions.
+- Steps: Parse all fields, replace the expected meta.title only and compare entire resulting documents.
+- Expected result: jlpt-one-book-n1 displays n1 and jlpt-short-term displays n2; every other field and identity is preserved.
+- Verified 2026-11-10: Exact parsed-document comparisons passed for both product assets and the two platform hosted copies.

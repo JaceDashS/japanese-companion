@@ -24,3 +24,7 @@ Example:
 - Input: The learner types "て形" while answering question 3.
 - Steps: Select a choice, grade, move to question 4.
 - Expected result: Question 4 shows an empty memo field and no request contains "て形".
+
+## Book Display Names
+- Existing jlpt-one-book-n1 and jlpt-short-term books display n1 and n2 respectively. Preserve file-derived identifiers, item addresses and learning data.
+- Example input: Existing jlpt-short-term progress. Steps: Reload the catalog with its new title. Expected result: The same book appears as n2 with records intact.
