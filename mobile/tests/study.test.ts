@@ -10,6 +10,30 @@ const settings = { srs: { maxReviewStage: 6, failureRetryDays: 2 } };
 import { identifyStudyState, displayItemId } from "../src/unified/identity.ts";
 import type { StudyState } from "../../shared/domain/studyTypes.ts";
 import { NativeQueueStorage } from "../src/unified/queueStorage.ts";
+import { applyReviewResultForDay } from "../.generated/product/shared/domain/srs.js";
+const buildersPath = "../../shared/controllers/domain/homeDashboardBuilders.ts";
+const { buildReviewDue } = await import(buildersPath);
+const openersPath = "../../shared/controllers/domain/sessionOpeners.ts";
+const { createSessionOpeners } = await import(openersPath);
+
+test("failed review lowers the Day stage and returns tomorrow with failed questions first", () => {
+  for (const stage of [1, 3]) {
+    const day = { id: "day", title: "Day", stage, nextReviewDate: "2026-11-10", items: ["correct", "wrong"].map(id => ({ id, problem: { sentence: "x", choices: ["a", "b"], answer: "a" } })) };
+    const result = applyReviewResultForDay(day, "2026-11-10", { correct: "PASS", wrong: "FAIL" });
+    assert.equal(result.allPass, false);
+    assert.equal(result.day.stage, Math.max(1, stage - 1));
+    assert.equal(result.day.nextReviewDate, "2026-11-11");
+    const curriculum = [{ id: "unit", title: "Unit", days: [result.day] }];
+    assert.equal(buildReviewDue(curriculum, "2026-11-10").length, 0);
+    const due = buildReviewDue(curriculum, "2026-11-11");
+    assert.equal(due.length, 1);
+    assert.equal(due[0].failCount, 1);
+    let opened: any;
+    createSessionOpeners({ getPathDay: () => result.day, isQuizTarget: Boolean, markDayAttemptNow: () => {}, setSession: (value: any) => { opened = value; }, shuffleArray: (items: string[]) => items, stateCurriculum: curriculum }).openReviewDay(due[0].path, due[0].dueItemIds);
+    assert.deepEqual(opened.itemIds, ["wrong", "correct"]);
+    assert.deepEqual(opened.graded, {});
+  }
+});
 test("native queue snapshots restore order and failures without crossing account stores", async () => {
   const disk = new Map<string, string>();
   const make = (account: string) => new NativeQueueStorage(async (value) => { disk.set(account, value); }, async () => disk.get(account) ?? null);

@@ -149,8 +149,7 @@ export function SessionScreen({ model, isPhone, notify }: { model: StudyModel; i
       </>}
     </>}
     {session.phase === "done" && <WordCard>
-      <T serif size={41.6} style={{ lineHeight: 52 }}>{session.mode === "review" ? ((session.passCount ?? 0) === (session.reviewedCount ?? 0) ? "満点" : "完") : session.allPass ? "昇" : "続"}</T>
-      <T size={16.3} tone="muted" style={{ textAlign: "center" }}>{session.mode === "review" ? `오늘 복습 반영 완료 — PASS ${session.passCount ?? 0}/${session.reviewedCount ?? 0}` : session.allPass ? "FAIL 없음. 복습 회차가 올라갔습니다." : "FAIL 존재. 내일 복습으로 이동했습니다."}</T>
+      <T size={24} weight="700" style={{ textAlign: "center" }}>{session.reviewedCount ?? 0}개 중 {session.passCount ?? 0}개 정답</T>
       <Btn variant="primary" title="확인" disabled={queued} onPress={model.goHome} />
     </WordCard>}
     {!!model.queue.items.length && <T size={12.2} tone="dim">전송 대기 {model.queue.items.length}건 · 설정에서 상태와 재시도를 확인할 수 있습니다.</T>}

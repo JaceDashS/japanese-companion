@@ -127,3 +127,20 @@ flowchart LR
 ## Restored Presentation
 
 The common screen implementation restores responsive desktop and compact compositions and the product visual identity. Layout and theme details: [Responsive Layout](30-responsive-layout.md).
+
+## Failed Day Review
+- Input: A stage 3 Day with one correct and one incorrect answer on 2026-11-10, using default retry settings.
+- Steps: Apply the shared Day result, persist the schedule and results, then build the daily review queue on 2026-11-11.
+- Expected result: Stage becomes 2, next review is 2026-11-11, and incorrect questions appear first when that Day opens. Stage never falls below 1. Custom retry intervals remain respected.
+- The result screen displays only `2개 중 1개 정답`, without completion or perfect score labels. Immediate retries are not added.
+- Code: `shared/domain/srs.ts`, `shared/controllers/domain/homeDashboardBuilders.ts`, `shared/controllers/domain/sessionOpeners.ts`, `mobile/src/unified/SessionScreen.tsx`.
+- Test: `mobile/tests/study.test.ts` tests failed review scheduling, next day queue inclusion and failed question ordering; `scripts/test-stage-progression.cjs` covers promotion and configured retry intervals.
+
+```mermaid
+flowchart LR
+ A[Grade Day] --> B{All correct}
+ B -- Yes --> C[Advance stage]
+ B -- No --> D[Decrease stage by one]
+ D --> E[Schedule retry date]
+ E --> F[Open Day with incorrect questions first]
+```
