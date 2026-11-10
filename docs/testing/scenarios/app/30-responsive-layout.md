@@ -33,3 +33,9 @@
 - Expected result: Mobile selection invokes the existing switchBook callback, remains disabled during the operation and reports failures. Today, Day and progress share the selector. Desktop keeps the existing multiple-book Segment without a dropdown.
 - Verified 2026-11-10: The actual BookSelect component changed JLPT N1 to JLPT N2 in a local synthetic browser harness. Its mobile width stayed within 390 pixels. Desktop branch preservation was checked in the HomeScreen diff. Production persistence and physical Android interaction were not exercised.
 - Validation: Type checking, 19 existing regressions and web and Android JavaScript exports passed. Android export required running outside the Windows sandbox after Hermes compilation failed within it; no code change was needed for that retry.
+
+## Themed Browser Controls
+- Input: Actual BookSelect and BrowserTheme components in a local browser harness, both product palettes and dark and light schemes.
+- Steps: Read select arrow position and padding, switch the theme, and inspect computed scrollbar colors on an overflowing nested panel.
+- Expected result: Chevron position is right 14px center, right padding is 40px, and the thumb and track use the active dim and panel tokens. Color scheme changes with the theme; select interaction remains native and desktop composition is unchanged.
+- Verified 2026-11-10: Both products' dark and light computed scrollbar colors matched their palette, with the expected arrow position and padding. Type checks passed. Operating-system popup appearance and physical Android rendering were not validated.

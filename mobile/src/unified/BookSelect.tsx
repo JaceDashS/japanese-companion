@@ -19,7 +19,7 @@ export function BookSelect({ books, value, onChange, disabled = false }: {
       onChange: (event: React.ChangeEvent<HTMLSelectElement>) => {
         if (event.target.value !== value) onChange(event.target.value);
       },
-      style: { width: "100%", minWidth: 0, minHeight: 44, padding: "10px 12px", borderRadius: 10, border: "1px solid " + c.border, backgroundColor: c.panel, color: c.text, fontFamily: fonts.sans, fontSize: 14, colorScheme: c.bg === "#ffffff" ? "light" : undefined },
+      style: { width: "100%", minWidth: 0, minHeight: 44, padding: "10px 40px 10px 12px", appearance: "none", backgroundImage: `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12"><path d="m3 4.5 3 3 3-3" fill="none" stroke="${c.muted}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`)}")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 14px center", backgroundSize: "12px 12px", borderRadius: 10, border: "1px solid " + c.border, backgroundColor: c.panel, color: c.text, fontFamily: fonts.sans, fontSize: 14, colorScheme: c.bg === "#ffffff" ? "light" : undefined },
     }, books.map(book => React.createElement("option", { key: book.id, value: book.id }, book.title))) :
       <Pressable accessibilityRole="button" accessibilityLabel={"교재: " + (selected?.title ?? "교재 없음")} accessibilityState={{ disabled: unavailable, expanded: open }} disabled={unavailable} onPress={() => setOpen(true)}
         style={{ minHeight: 44, borderWidth: 1, borderColor: c.border, borderRadius: 10, backgroundColor: c.panel, padding: 12, flexDirection: "row", alignItems: "center", gap: 10, opacity: unavailable ? 0.6 : 1 }}>

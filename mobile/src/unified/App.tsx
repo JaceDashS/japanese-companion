@@ -19,6 +19,7 @@ import { useHomeFocus } from "./useHomeFocus";
 import { SITE_ORIGIN } from "./config";
 import { Chrome } from "./Chrome";
 import { isDesktopLayout } from "./responsive";
+import { BrowserTheme } from "./BrowserTheme";
 type Gate = { kind: "checking" } | { kind: "login" } | { kind: "password" } | { kind: "blocked" } | { kind: "ready"; user: User; boot: BootData };
 
 /** Common Expo root; each account gets a new study screen lifecycle. */
@@ -51,7 +52,7 @@ export default function App() {
   useEffect(() => listenForExpiry(() => { setStorageScope(""); setGate({ kind: "login" }); setError("로그인이 만료되었습니다. 다시 로그인해 주세요."); }), []);
   const logout = () => action(async () => { await client.logout(); setStorageScope(""); setGate({ kind: "login" }); });
   return <SafeAreaProvider><SafeAreaView style={[{ flex: 1, backgroundColor: palettes.dark.bg }, gradient(`radial-gradient(900px 480px at 85% -10%, ${palettes.dark.glow}, transparent 70%)`)]}><StatusBar style="light" />
-    {gate.kind !== "ready" && <Notices />}
+    {gate.kind !== "ready" && <><BrowserTheme scheme="dark" /><Notices /></>}
     {gate.kind === "checking" && <>{busy || !error ? <Busy /> : <View style={layout.body}><Label error>{error}</Label><Action title="다시 불러오기" onPress={() => void action(async () => enter(await client.restore())).catch(() => undefined)} /></View>}</>}
     {gate.kind === "login" && <LoginScreen name="Japanese Companion" busy={busy} error={error} remember={remember} onRememberChange={setRemember} onLogin={(username, password) => void action(async () => enter(await client.login(username, password, remember))).catch(() => undefined)}><GoogleButton client={client} remember={remember} disabled={busy} onBusyChange={setBusy} onLoggedIn={(user) => action(() => enter(user))} /></LoginScreen>}
     {gate.kind === "password" && <PasswordScreen busy={busy} error={error} onSave={(a, b) => void action(async () => { await client.changePassword(a, b); await enter(await client.restore()); }).catch(() => undefined)} onLogout={() => void logout().catch(() => undefined)} />}
@@ -83,7 +84,7 @@ function StudyApp({ boot, user, onLogout, onReset }: { boot: BootData; user: Use
   }, [notify]);
   const setDisplay = (next: Display) => { updateDisplay(next); void storage.write("jpc-theme-v1", next.theme).catch(() => undefined); void storage.write("jpc-device-mode-v1", next.device).catch(() => undefined); };
   const dueCount = model.dashboard.reviewDue.length;
-  return <Theme.Provider value={c}><Device.Provider value={{ phone: isPhone }}><View style={[{ flex: 1, backgroundColor: c.bg }, gradient(`radial-gradient(900px 480px at 85% -10%, ${c.glow}, transparent 70%)`)]}><StatusBar style={display.theme === "light" ? "dark" : "light"} /><Notices />
+  return <Theme.Provider value={c}><Device.Provider value={{ phone: isPhone }}><View style={[{ flex: 1, backgroundColor: c.bg }, gradient(`radial-gradient(900px 480px at 85% -10%, ${c.glow}, transparent 70%)`)]}><BrowserTheme scheme={display.theme} /><StatusBar style={display.theme === "light" ? "dark" : "light"} /><Notices />
     {model.session ? <SessionScreen key={model.session.unitId + ":" + model.session.dayId} model={model} isPhone={isPhone} notify={notify} /> : <>
       <Chrome desktop={!isPhone} tab={tab} today={today} dueCount={dueCount} onNavigate={setTab}>
         {tab === "settings" ? <SettingsScreen phone={isPhone} model={model} display={display} setDisplay={setDisplay} notify={notify} onLogout={onLogout} onReset={onReset} /> : <HomeScreen model={model} tab={tab} today={today} desktop={!isPhone} notify={notify} />}
