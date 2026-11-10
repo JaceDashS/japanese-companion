@@ -2,8 +2,6 @@
 import { addDays } from "./date";
 import { DEFAULT_SRS_SETTINGS, normalizeSrsSettings } from "./srsPreferences";
 
-// 틀린 Day 를 다시 보는 간격. stage 는 그대로 두고 하루 뒤에 다시 띄운다.
-
 function isQuizTarget(item) {
   return Boolean(item);
 }

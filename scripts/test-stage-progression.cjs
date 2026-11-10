@@ -93,7 +93,7 @@ function runCases() {
     const out = applyReviewResultForDay(day, today, { "d1-i1": "PASS", "d1-i2": "FAIL" });
     assert.equal(out.day.stage, 1);
     assert.equal(out.day.nextReviewDate, "2026-02-19");
-    results.push({ name: "review_fail_keeps_stage_and_retries_tomorrow", status: "PASS" });
+    results.push({ name: "review_fail_decrements_stage_and_retries_tomorrow", status: "PASS" });
   }
 
   {
