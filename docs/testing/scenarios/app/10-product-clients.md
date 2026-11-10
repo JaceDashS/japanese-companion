@@ -52,3 +52,9 @@
 - Steps: Parse all fields, replace the expected meta.title only and compare entire resulting documents.
 - Expected result: jlpt-one-book-n1 displays n1 and jlpt-short-term displays n2; every other field and identity is preserved.
 - Verified 2026-11-10: Exact parsed-document comparisons passed for both product assets and the two platform hosted copies.
+
+## Production Book Catalog
+- Input: The source directory after removing the development book, and a previously selected dev book ID.
+- Steps: Enumerate remaining combined JSON files, read the actual catalog and inspect existing loadStudy fallback and default content-tool filenames.
+- Expected result: Exactly n1 and n2 with original IDs, no default tool reference to the removed file, and reload falls back to n1 without deleting account data.
+- Verification: Actual catalog enumeration and syntax checks for all four modified content tools; no repair command is executed.

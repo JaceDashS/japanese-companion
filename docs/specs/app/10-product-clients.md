@@ -28,3 +28,7 @@ Example:
 ## Book Display Names
 - Existing jlpt-one-book-n1 and jlpt-short-term books display n1 and n2 respectively. Preserve file-derived identifiers, item addresses and learning data.
 - Example input: Existing jlpt-short-term progress. Steps: Reload the catalog with its new title. Expected result: The same book appears as n2 with records intact.
+
+## Production Book Catalog
+- Offer only the n1 and n2 production books. Remove the Dev 입력 테스트 source from the product catalog and default content tooling; retain existing account records.
+- Example input: A saved selection still names dev. Steps: Reload the catalog without that test book. Expected result: Existing loadStudy fallback selects n1; remaining books and progress stay intact.

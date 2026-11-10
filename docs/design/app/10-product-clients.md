@@ -65,3 +65,11 @@ The shared modules expose the following identifiers. Generated adapters preserve
 - Only meta.title changes; filenames, levels, Unit and item data remain unchanged. Hosted source has matching metadata in the platform repository.
 - Example input: Existing jlpt-one-book-n1 account state. Steps: Read renamed metadata. Expected result: n1 is displayed without changing its state key.
 - Scenarios: [Book Display Names](../../testing/scenarios/app/10-product-clients.md#book-display-names).
+
+## Production Book Catalog
+- Input: The remaining asset/jlpt-one-book-n1.json and asset/jlpt-short-term.json combined sources.
+- Output: Only n1 and n2 from the existing catalog reader; no test-book source is bundled or listed.
+- Code: scripts/audit-missing-problems.cjs, scripts/audit-fix-problem-answers.cjs, scripts/audit-duplicate-problem-answers.cjs and scripts/repair-kanji-decomposition-problems.cjs default only to those two files after removing the retired source. Audit and repair behavior is otherwise unchanged.
+- mobile/src/unified/useStudyModel.ts loadStudy already falls back to n1 if a remembered selectedBookId is absent from the new catalog. No account record is deleted or rewritten for removal.
+- Example input: Run a default content audit after removing the test source. Steps: Resolve its default filenames. Expected result: Both production sources exist and the removed test file is never opened.
+- Scenarios: [Production Book Catalog](../../testing/scenarios/app/10-product-clients.md#production-book-catalog).

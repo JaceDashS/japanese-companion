@@ -7,7 +7,6 @@ const path = require("node:path");
 const ROOT = path.resolve(__dirname, "..");
 const { MANUAL_READINGS } = require("./repair-kanji-decomposition-problems.cjs");
 const DEFAULT_FILES = [
-  "asset/dev.json",
   "asset/jlpt-one-book-n1.json",
   "asset/jlpt-short-term.json",
 ];

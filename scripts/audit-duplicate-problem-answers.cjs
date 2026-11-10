@@ -6,7 +6,6 @@ const path = require("node:path");
 
 const ROOT = path.resolve(__dirname, "..");
 const DEFAULT_FILES = [
-  "asset/dev.json",
   "asset/jlpt-one-book-n1.json",
   "asset/jlpt-short-term.json",
 ];
