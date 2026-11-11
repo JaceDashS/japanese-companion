@@ -10,6 +10,7 @@ import { client } from "./runtime";
 import { Btn, Chip, CopyId, Empty, fonts, Input, MarkdownBox, MemoEditor, primaryFill, Segment, Sheet, Switch, T, Theme } from "./ui";
 import { WordActions } from "./WordActions";
 import { useSessionKeys } from "./useSessionKeys";
+import { FuriganaSentence, problemFurigana, RelatedNotes } from "./StudyNotes";
 
 const markdown = (text: string) => <StudyMarkdown text={text} client={client} />;
 
@@ -77,7 +78,8 @@ export function SessionScreen({ model, isPhone, notify }: { model: StudyModel; i
   const [reading, setReading] = useState(true);
   const [meaning, setMeaning] = useState(true);
   const [panel, setPanel] = useState<"items" | "notes" | null>("items");
-  const [sheet, setSheet] = useState<"items" | "notes" | "words" | null>(null);
+  const [sheet, setSheet] = useState<"items" | "notes" | "words" | "related" | null>(null);
+  const [sentenceReading, setSentenceReading] = useState(false);
   const [width, setWidth] = useState(Number(model.state.studyDrawerWidth) || 340);
   const resizeOrigin = useRef(width);
   useEffect(() => { model.setSideWidth(width); }, [width]);
@@ -104,14 +106,16 @@ export function SessionScreen({ model, isPhone, notify }: { model: StudyModel; i
     model.setSession((previous) => previous && ({ ...previous, phase: previous.phase === "quiz" ? "study" : "quiz" }));
   };
   const notes = item ? <View style={{ gap: 10 }}>
-    <T size={11.8} tone="dim" weight="600">내 메모</T><MarkdownBox text={String(item.memoPersonal ?? "")} placeholder="메모 없음" render={markdown} />
-    <T size={11.8} tone="dim" weight="600">한자 디컴포지션</T><MarkdownBox text={String(item.memoDecomposition ?? "")} placeholder="메모 없음" render={markdown} />
+    <T size={11.8} tone="dim" weight="600">내 메모</T><MarkdownBox text={String(item.memo ?? "")} placeholder="메모 없음" render={markdown} />
+    <T size={11.8} tone="dim" weight="600">한자 디컴포지션</T><MarkdownBox text={String(item.decomposition ?? "")} placeholder="메모 없음" render={markdown} />
   </View> : null;
   const items = <ItemGrid items={dayItems} current={item?.id} onJump={jump} onCopy={(id) => void copy(id)} displayId={model.getDisplayItemId} />;
   const problem = normalizeProblem(item?.problem);
   const selected = item && session.selectedChoices?.[item.id];
   const verdict = item && session.graded?.[item.id];
   const showChoices = item && (session.showChoices?.[item.id] || selected);
+  const furigana = problemFurigana(item?.problem);
+  const relatedButton = <Btn variant="ghost" title="관련 노트" onPress={() => setSheet("related")} testID="related-notes" />
   const wordSize = Math.max(41.6, Math.min(70.4, viewport * 0.12));
   const sentenceSize = Math.max(18.4, Math.min(24.8, viewport * 0.046));
   const draft = model.editor.draft;
@@ -129,19 +133,27 @@ export function SessionScreen({ model, isPhone, notify }: { model: StudyModel; i
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, justifyContent: "center", alignItems: "center" }}>
           <Switch on={reading} onToggle={() => setReading(!reading)} label="후리가나" /><Switch on={meaning} onToggle={() => setMeaning(!meaning)} label="뜻" />
           <Btn variant="ghost" title="단어 복사" onPress={() => void copy(String(item.expression ?? ""))} />
+          {relatedButton}
         </View>
       </WordCard>
-      <MemoEditor key={item.id + ":personal"} label="내 메모" value={String(item.memoPersonal ?? "")} placeholder="눌러서 메모 입력" onCommit={(value) => model.updateMemo(item.id, "memoPersonal", value)} render={markdown} />
-      <MemoEditor key={item.id + ":decomposition"} label="한자 디컴포지션" requireDouble value={String(item.memoDecomposition ?? "")} placeholder="두 번 눌러서 편집" onCommit={(value) => model.updateMemo(item.id, "memoDecomposition", value)} render={markdown} />
+      <MemoEditor key={item.id + ":personal"} label="내 메모" value={String(item.memo ?? "")} placeholder="눌러서 메모 입력" onCommit={(value) => model.updateMemo(item.id, "memo", value)} render={markdown} />
+      <MemoEditor key={item.id + ":decomposition"} label="한자 디컴포지션" requireDouble value={String(item.decomposition ?? "")} placeholder="두 번 눌러서 편집" onCommit={(value) => model.updateMemo(item.id, "decomposition", value)} render={markdown} />
     </>}
     {item && quiz && <>
-      <View style={{ flexDirection: "row" }}><CopyId id={model.getDisplayItemId(item)} onCopy={(id) => void copy(id)} /></View>
-      <Sentence text={problem?.sentence || `${item.expression ?? ""} (${item.reading ?? ""})`} target={problem?.target ?? ""} size={sentenceSize} />
+      <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 6 }}>
+        <CopyId id={model.getDisplayItemId(item)} onCopy={(id) => void copy(id)} />
+        <View style={{ flex: 1 }} />
+        {furigana && <Switch on={sentenceReading} onToggle={() => setSentenceReading(!sentenceReading)} label="후리가나" />}
+      </View>
+      {furigana && sentenceReading
+        ? <FuriganaSentence segments={furigana} target={problem?.target ?? ""} revealTarget={Boolean(verdict)} size={sentenceSize} />
+        : <Sentence text={problem?.sentence || `${item.expression ?? ""} (${item.reading ?? ""})`} target={problem?.target ?? ""} size={sentenceSize} />}
       {problem?.choices.length ? <>
         <QuizMemo key={item.id} />
         {showChoices ? <View style={{ gap: 8 }}>{(session.choiceOrders?.[item.id] ?? problem.choices).map((choice: string, index: number) => <Choice key={index + ":" + choice} index={index} text={choice} phone={isPhone} selected={selected === choice} onPress={() => model.selectQuizChoice(choice)} />)}</View>
           : <Btn size="lg" title="보기 열기" onPress={model.openQuizChoices} />}
         {verdict && <Verdict pass={verdict === "PASS"}>{verdict === "PASS" ? "정답입니다." : `오답입니다. 정답: ${problem.answer || "(미설정)"}`}</Verdict>}
+        {verdict === "FAIL" && <View style={{ flexDirection: "row" }}>{relatedButton}</View>}
         <Btn variant="ghost" title="문제 수정" onPress={() => model.openProblemEditor(item.problem)} />
       </> : <>
         <T size={13.1} tone="muted">{problem ? "보기가 없습니다." : "아직 문제가 없습니다."}</T>
@@ -193,6 +205,7 @@ export function SessionScreen({ model, isPhone, notify }: { model: StudyModel; i
     {sheet === "items" && <Sheet title={`${model.sessionDay?.title} 목록`} onClose={() => setSheet(null)}>{items}</Sheet>}
     {sheet === "notes" && <Sheet title="현재 단어 노트" onClose={() => setSheet(null)}>{notes}</Sheet>}
     {sheet === "words" && <WordActions model={model} path={session} notify={notify} onClose={() => setSheet(null)} />}
+    {sheet === "related" && item && <RelatedNotes expression={String(item.expression ?? "")} memos={model.memos} onClose={() => setSheet(null)} render={markdown} />}
     {model.editor.open && item && <Sheet title="문제 편집" onClose={() => model.setEditor((previous) => ({ ...previous, open: false, error: "" }))}>
       <Segment options={[{ key: "form", label: "폼" }, { key: "json", label: "JSON" }]} value={draft.mode} onChange={(mode) => patchDraft({ mode })} />
       {draft.mode === "json" ? <Input multiline label="문제 JSON" value={draft.jsonText} onChangeText={(value) => patchDraft({ jsonText: value })} placeholder={'{\n  "sentence": "문장",\n  "target": "대상",\n  "choices": ["보기1", "보기2"],\n  "answer": "보기1"\n}'} /> : <>

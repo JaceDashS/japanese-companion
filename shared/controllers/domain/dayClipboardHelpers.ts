@@ -2,7 +2,7 @@ import { getExpressionStrict } from "./expression.ts";
 import type { StudyItem } from "../../domain/studyTypes.ts";
 
 export type ImportPayload = {
-  memoDecomposition: string;
+  decomposition: string;
   hasProblem: boolean;
   problem?: unknown;
 };
@@ -73,7 +73,7 @@ export function buildDayWordCopyPayload(items: StudyItem[], isQuizTarget: (item:
         expression: word,
         kanjiToKana,
         answer: buildAnswerFromKanjiToKana(word, kanjiToKana),
-        memoDecomposition: "",
+        decomposition: "",
         problem: item.problem === undefined ? null : item.problem,
       };
     })
@@ -85,15 +85,15 @@ export function buildImportPayloadByExpression(parsed: unknown[]) {
   parsed.forEach((entry) => {
     const word = getExpressionStrict(entry, "applyDayDecompositionImporter.entry");
     if (!word) return;
-    const source = entry && typeof entry === "object" ? (entry as { memoDecomposition?: unknown; problem?: unknown }) : {};
-    const memoDecomposition = String(source.memoDecomposition ?? "")
+    const source = entry && typeof entry === "object" ? (entry as { decomposition?: unknown; memoDecomposition?: unknown; problem?: unknown }) : {};
+    const decomposition = String(source.decomposition ?? source.memoDecomposition ?? "")
       .split("\\r\\n")
       .join("\n")
       .split("\\n")
       .join("\n");
     const hasProblem = Object.prototype.hasOwnProperty.call(entry ?? {}, "problem");
     mapByExpression.set(word, {
-      memoDecomposition,
+      decomposition,
       hasProblem,
       problem: hasProblem ? cloneProblemValue(source.problem) : undefined,
     });

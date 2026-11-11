@@ -19,6 +19,7 @@ import { buildDayWordCopyPayload } from "../../.generated/product/shared/control
 import { apiFetch, apiUrl, hydrateState, saveState } from "./runtime";
 import { readAppPreferences, writeAppPreferences } from "../../.generated/product/shared/controllers/domain/appPreferences.js";
 import { identifyStudyState, displayItemId } from "./identity";
+import { loadMemos, type MemoEntry } from "./japaneseWords";
 
 export type Preferences = {
   selectedBookId?: string;
@@ -48,6 +49,9 @@ export function useStudyModel(initial: BootData, today: string, notify: (text: s
   const [editor, setEditor] = useState({ open: false, draft: createProblemDraft(null), error: "" });
   const [srs, setSrs] = useState(() => normalizeSrsSettings(initial.preferences.srs));
   const [plan, setPlan] = useState(() => ({ start: initial.preferences.planRange?.start ?? today, end: initial.preferences.planRange?.end ?? (today.slice(0, 4) + "-06-01" >= today ? today.slice(0, 4) + "-06-01" : (Number(today.slice(0, 4)) + 1) + "-06-01") }));
+  const [memos, setMemos] = useState<MemoEntry[]>([]);
+  const reloadMemos = () => loadMemos().then(setMemos).catch((error) => notify(String(error), "error"));
+  useEffect(() => { void reloadMemos(); }, []);
   const queue = useSourceWriteQueue(apiFetch);
   const persistence = createSourcePersistence(apiFetch);
   useLearningPlanSync({ setState, state, today });
@@ -61,6 +65,36 @@ export function useStudyModel(initial: BootData, today: string, notify: (text: s
     const next = await loadCurriculumFiles();
     setFiles(next);
     setState((previous) => identifyStudyState({ ...previous, curriculum: mergeCurriculumFromSource(previous.curriculum, next) }));
+    void reloadMemos();
+  };
+  /** Reloads the textbooks after a personal book changed; a deleted current book falls back to the default. */
+  const reloadBooks = async () => {
+    await queue.waitForIdle();
+    const next = await loadCurriculumFiles();
+    setFiles(next);
+    const available = listAvailableBooks(next);
+    if (available.some((item: any) => item.id === book)) {
+      setState((previous) => identifyStudyState(buildAppState(book, next, { dailyNewLearningCount: previous.dailyNewLearningCount ?? 1 })));
+      return;
+    }
+    const fallback = available.find((item: any) => item.id === "jlpt-one-book-n1")?.id ?? available[0]?.id;
+    if (!fallback) return;
+    await hydrateState(fallback);
+    setState(identifyStudyState(buildAppState(fallback, next, { dailyNewLearningCount: state.dailyNewLearningCount ?? 1 })));
+    setBook(fallback); setSession(null);
+    await writeAppPreferences({ selectedBookId: fallback });
+  };
+  /** Saves a memo or decomposition and keeps the related-note list in step with memo edits. */
+  const updateMemo = (itemId: string, field: "memo" | "decomposition", value: string) => {
+    progress.updateMemo(itemId, field, value);
+    if (field !== "memo") return;
+    const target = getPathDay(state.curriculum, { unitId: session?.unitId ?? "", dayId: session?.dayId ?? "" })?.items.find((item: StudyItem) => item.id === itemId);
+    const expression = String(target?.expression ?? "");
+    if (!expression) return;
+    setMemos((previous) => {
+      const rest = previous.filter((entry) => entry.expression !== expression);
+      return value.trim() ? [...rest, { expression, memo: value, reading: String(target?.reading ?? ""), meaningKo: String(target?.meaningKo ?? "") }] : rest;
+    });
   };
   const goHome = () => { setSession(null); void refresh().catch((error) => notify(String(error), "error")); };
   const controller = createSessionController({
@@ -83,7 +117,7 @@ export function useStudyModel(initial: BootData, today: string, notify: (text: s
   return {
     state, files, book, books: listAvailableBooks(files), session, setSession, editor, setEditor,
     srs, plan, dashboard, queue, currentItem: currentItem as StudyItem | null, sessionDay, sessionItems,
-    ...controller, ...input, ...openers, ...progress, getDisplayItemId: displayItemId, goHome, refresh,
+    ...controller, ...input, ...openers, ...progress, updateMemo, memos, reloadBooks, getDisplayItemId: displayItemId, goHome, refresh,
     async switchBook(next: string) {
       if (next === book) return;
       await queue.waitForIdle();

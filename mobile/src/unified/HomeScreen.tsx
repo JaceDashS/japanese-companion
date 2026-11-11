@@ -6,11 +6,15 @@ import type { StudyModel } from "./useStudyModel";
 import { Card, layout, Segment, T } from "./ui";
 import { BookSelect } from "./BookSelect";
 import { DayCard, DayGrid, ProgressPanel, RecentDays, StageChart, Stats, WordActionCard } from "./Dashboard";
+import { Btn } from "./ui";
+import { PersonalBooks } from "./PersonalBooks";
 
 /** Today, Day and progress tabs in the former dashboard composition, backed by the shared dashboard builders. */
 export function HomeScreen({ model, tab, today, desktop, notify }: { desktop: boolean; model: StudyModel; tab: "today" | "days" | "progress"; today: string; notify: (text: string, tone?: string) => void }) {
   const [refreshing, setRefreshing] = useState(false);
   const [switchingBook, setSwitchingBook] = useState(false);
+  const [managing, setManaging] = useState(false);
+  const manage = <Btn title="내 교재" onPress={() => setManaging(true)} testID="personal-books" />;
   const { dashboard: d, srs } = model;
   const phone = !desktop;
   const pending = new Set(model.queue.items.filter((entry: any) => entry.status !== "failed").map((entry: any) => entry.learningPath && toLearningPathKey(entry.learningPath)));
@@ -18,12 +22,13 @@ export function HomeScreen({ model, tab, today, desktop, notify }: { desktop: bo
   const learning = d.pendingLearningRows.filter((row: any) => !pending.has(toLearningPathKey(row.path)));
   const rows = d.allDayRows;
   const refresh = () => { setRefreshing(true); model.refresh().catch((error) => notify(String(error), "error")).finally(() => setRefreshing(false)); };
-  const books = phone ? <BookSelect books={model.books} value={model.book} disabled={switchingBook} onChange={(id) => {
+  const books = phone ? <View style={{ gap: 8 }}><BookSelect books={model.books} value={model.book} disabled={switchingBook} onChange={(id) => {
     setSwitchingBook(true);
     void model.switchBook(id).catch((error) => notify(String(error), "error")).finally(() => setSwitchingBook(false));
-  }} /> : model.books.length > 1 && <View style={{ flexDirection: "row", alignItems: "center", gap: 10, maxWidth: desktop ? 420 : undefined }}>
-    <T size={12.2} tone="dim">교재</T>
-    <Segment options={model.books.map((book: any) => ({ key: book.id, label: book.title }))} value={model.book} onChange={(id) => void model.switchBook(String(id)).catch((error) => notify(String(error), "error"))} />
+  }} /><View style={{ flexDirection: "row" }}>{manage}</View></View> : <View style={{ flexDirection: "row", alignItems: "center", gap: 10, maxWidth: desktop ? 640 : undefined, flexWrap: "wrap" }}>
+    {model.books.length > 1 && <><T size={12.2} tone="dim">교재</T>
+    <Segment options={model.books.map((book: any) => ({ key: book.id, label: book.title }))} value={model.book} onChange={(id) => void model.switchBook(String(id)).catch((error) => notify(String(error), "error"))} /></>}
+    {manage}
   </View>;
   const wordCard = (row: any, review: boolean) => {
     const mode = review ? "복습" : "학습";
@@ -70,5 +75,8 @@ export function HomeScreen({ model, tab, today, desktop, notify }: { desktop: bo
       </View>
     </View>
   </>;
-  return <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={phone ? layout.phoneBody : layout.body} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}>{phone && books}{content}</ScrollView>;
+  return <>
+    <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={phone ? layout.phoneBody : layout.body} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}>{phone && books}{content}</ScrollView>
+    {managing && <PersonalBooks model={model} notify={notify} onClose={() => setManaging(false)} />}
+  </>;
 }

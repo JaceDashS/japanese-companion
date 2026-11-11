@@ -74,7 +74,7 @@ export async function applyDayDecompositionImport({
 
   const changedItems = matchedItems
     .map(({ item, payload }) => {
-      const canWriteMemo = isMemoEmpty(item.memoDecomposition);
+      const canWriteMemo = isMemoEmpty(item.decomposition);
       const canWriteProblem = Boolean(payload?.hasProblem && isProblemEmpty(item.problem));
       return {
         item,
@@ -98,7 +98,7 @@ export async function applyDayDecompositionImport({
 
       return {
         ...item,
-        ...(matched.canWriteMemo ? { memoDecomposition: matched.payload?.memoDecomposition ?? "" } : {}),
+        ...(matched.canWriteMemo ? { decomposition: matched.payload?.decomposition ?? "" } : {}),
         ...(matched.canWriteProblem ? { problem: matched.payload?.problem } : {}),
       };
     }),
@@ -108,7 +108,7 @@ export async function applyDayDecompositionImport({
     changedItems.flatMap(({ item, payload, canWriteMemo, canWriteProblem }) => {
       const tasks = [];
       if (canWriteMemo) {
-        tasks.push(persistSourceField(item, "memoDecomposition", payload?.memoDecomposition ?? ""));
+        tasks.push(persistSourceField(item, "decomposition", payload?.decomposition ?? ""));
       }
       if (canWriteProblem) {
         tasks.push(persistSourceField(item, "problem", payload?.problem));
@@ -142,7 +142,7 @@ export async function resetDayDecompositions({
   targetPath,
 }: ResetDayOptions) {
   const dayIndexLabel = getDisplayDayIndex(targetDay, 1);
-  const changedItems = targetDay.items.filter((item) => isQuizTarget(item) && String(item.memoDecomposition ?? "").length > 0);
+  const changedItems = targetDay.items.filter((item) => isQuizTarget(item) && String(item.decomposition ?? "").length > 0);
 
   if (changedItems.length === 0) {
     showToast(`Day${dayIndexLabel} 분해 초기화할 항목이 없습니다.`);
@@ -155,7 +155,7 @@ export async function resetDayDecompositions({
       changedItems.some((changed) => changed.id === item.id)
         ? {
             ...item,
-            memoDecomposition: "",
+            decomposition: "",
           }
         : item,
     ),
@@ -166,7 +166,7 @@ export async function resetDayDecompositions({
     curriculum: replaceDay(prev.curriculum, targetPath, nextDay),
   }));
 
-  await Promise.all(changedItems.map((item) => persistSourceField(item, "memoDecomposition", "")));
+  await Promise.all(changedItems.map((item) => persistSourceField(item, "decomposition", "")));
 
   showToast(`Day${dayIndexLabel} 분해 초기화 ${changedItems.length}개 완료`);
 }

@@ -37,8 +37,8 @@ export type StudyItem = {
   nextReviewDate?: string | null;
   lastResult?: QuizResult;
   lastAttemptDate?: string;
-  memoDecomposition?: string;
-  memoPersonal?: string;
+  decomposition?: string;
+  memo?: string;
   [key: string]: unknown;
 };
 

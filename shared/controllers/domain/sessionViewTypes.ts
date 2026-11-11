@@ -8,8 +8,8 @@ export type SessionItemView = {
   id: string;
   lastResult?: QuizResult;
   meaningKo?: string;
-  memoDecomposition?: string;
-  memoPersonal?: string;
+  decomposition?: string;
+  memo?: string;
   problem?: unknown;
   reading?: string;
   [key: string]: unknown;

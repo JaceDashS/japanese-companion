@@ -59,8 +59,8 @@ export function mergeCurriculumFromSource(curriculum: StudyUnit[], files?: Recor
               : item.nextReviewDate,
             lastResult: toLastResult(sourceItem.lastResult, item.lastResult),
             lastAttemptDate: toOptionalString(sourceItem.lastAttemptDate, item.lastAttemptDate),
-            memoDecomposition: toOptionalString(sourceItem.memoDecomposition, item.memoDecomposition),
-            memoPersonal: toOptionalString(sourceItem.memoPersonal, item.memoPersonal),
+            decomposition: toOptionalString(sourceItem.decomposition ?? sourceItem.memoDecomposition, item.decomposition),
+            memo: toOptionalString(sourceItem.memo ?? sourceItem.memoPersonal, item.memo),
             problem: Object.prototype.hasOwnProperty.call(sourceItem, "problem") ? sourceItem.problem : item.problem,
           };
         }),

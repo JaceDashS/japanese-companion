@@ -93,8 +93,8 @@ export function booksFromFiles(
                 answers: p.answer ? [String(p.answer)] : [],
                 multi: false,
                 explanation: String(p.sentence ?? ""),
-                memo: q.memoPersonal ?? "",
-                decomposition: q.memoDecomposition ?? "",
+                memo: q.memo ?? q.memoPersonal ?? "",
+                decomposition: q.decomposition ?? q.memoDecomposition ?? "",
                 raw: q,
               };
             }),
@@ -163,7 +163,7 @@ export function memoPayload(
   unit: Unit,
   item: Item,
   value: string,
-  field = "memoPersonal",
+  field = "memo",
 ) {
   return {
     sourcePath: unit.source,

@@ -38,8 +38,8 @@ export function createExpressionItem(
     sourceRef,
     lastResult: toLastResult(sourceItem?.lastResult),
     lastAttemptDate: isValidAttemptDate(sourceItem?.lastAttemptDate) ? sourceItem.lastAttemptDate : "",
-    memoDecomposition: toMemoText(sourceItem?.memoDecomposition),
-    memoPersonal: toMemoText(sourceItem?.memoPersonal),
+    decomposition: toMemoText(sourceItem?.decomposition ?? sourceItem?.memoDecomposition),
+    memo: toMemoText(sourceItem?.memo ?? sourceItem?.memoPersonal),
   };
 }
 

@@ -41,7 +41,11 @@ export function createProgressActions({
     void persistSourceDayField(day, "lastAttemptDate", today, path);
   };
 
-  const updateMemo = (itemId: string, field: "memoPersonal" | "memoDecomposition", value: string) => {
+  /**
+   * A memo belongs to the expression, so every loaded word written the same way shows the new memo.
+   * A decomposition stays with its one word.
+   */
+  const updateMemo = (itemId: string, field: "memo" | "decomposition", value: string) => {
     if (!session) return;
     const path = {
       unitId: session.unitId,
@@ -54,15 +58,28 @@ export function createProgressActions({
     const targetItem = day.items.find((item) => item.id === itemId);
     if (!targetItem) return;
 
-    const nextDay = {
-      ...day,
-      items: day.items.map((item) => (item.id === itemId ? { ...item, [field]: value } : item)),
-    };
-
-    setState((prev) => ({
-      ...prev,
-      curriculum: replaceDay(prev.curriculum, path, nextDay),
-    }));
+    if (field === "memo") {
+      const expression = targetItem.expression;
+      const matches = (item: { id: string; expression?: string }) => item.id === itemId || Boolean(expression && item.expression === expression);
+      setState((prev) => ({
+        ...prev,
+        curriculum: prev.curriculum.map((unit) => ({
+          ...unit,
+          days: unit.days.map((candidate) => (candidate.items.some(matches)
+            ? { ...candidate, items: candidate.items.map((item) => (matches(item) ? { ...item, memo: value } : item)) }
+            : candidate)),
+        })),
+      }));
+    } else {
+      const nextDay = {
+        ...day,
+        items: day.items.map((item) => (item.id === itemId ? { ...item, decomposition: value } : item)),
+      };
+      setState((prev) => ({
+        ...prev,
+        curriculum: replaceDay(prev.curriculum, path, nextDay),
+      }));
+    }
     void persistSourceField(targetItem, field, value);
   };
 

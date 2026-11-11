@@ -63,7 +63,7 @@ export function getDayPassRatio(day: StudyDay) {
 
 export function getDayMissingDecompositionCount(day: StudyDay | null | undefined) {
   const targetItems = day?.items?.filter(isQuizTarget) ?? [];
-  return targetItems.filter((item) => String(item?.memoDecomposition ?? "").trim().length === 0).length;
+  return targetItems.filter((item) => String(item?.decomposition ?? "").trim().length === 0).length;
 }
 
 export function getUnitProgress(unit: StudyUnit, settings?: SrsSettings) {
