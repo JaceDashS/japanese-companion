@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { StudyState, SessionView, StudyItem, LearningPath } from "../../../shared/domain/studyTypes";
 import { buildAppState, listAvailableBooks, loadCurriculumFiles } from "../../.generated/product/shared/controllers/domain/curriculumFiles.js";
 import { useHomeDashboardData } from "../../.generated/product/shared/controllers/domain/homeDashboard.js";
@@ -53,6 +53,22 @@ export function useStudyModel(initial: BootData, today: string, notify: (text: s
   const reloadMemos = () => loadMemos().then(setMemos).catch((error) => notify(String(error), "error"));
   useEffect(() => { void reloadMemos(); }, []);
   const queue = useSourceWriteQueue(apiFetch);
+  const stalled = useRef(new Set<(error: Error) => void>());
+  const stalledError = () => new Error("저장하지 못한 학습 기록이 있어 다시 시도하는 중입니다. 연결을 확인한 뒤 잠시 후 다시 시도해 주세요.");
+  const retrying = queue.items.some((item: { status: string }) => item.status === "retrying");
+  useEffect(() => {
+    if (!retrying) return;
+    for (const reject of stalled.current) reject(stalledError());
+    stalled.current.clear();
+  }, [retrying]);
+  /** Waits for queued saves, but rejects once a save is retrying so the screen never waits forever. */
+  const waitForSaves = () => {
+    if (retrying) return Promise.reject(stalledError());
+    return new Promise<void>((resolve, reject) => {
+      stalled.current.add(reject);
+      queue.waitForIdle().then(resolve, reject).finally(() => stalled.current.delete(reject));
+    });
+  };
   const persistence = createSourcePersistence(apiFetch);
   useLearningPlanSync({ setState, state, today });
   useEffect(() => { saveState(state, book); }, [state, book]);
@@ -61,7 +77,7 @@ export function useStudyModel(initial: BootData, today: string, notify: (text: s
   const { currentItem, sessionDay, sessionItems } = selection;
   const progress = createProgressActions({ session, stateCurriculum: state.curriculum, today, setState, getPathDay, replaceDay, ...persistence });
   const refresh = async () => {
-    await queue.waitForIdle();
+    await waitForSaves();
     const next = await loadCurriculumFiles();
     setFiles(next);
     setState((previous) => identifyStudyState({ ...previous, curriculum: mergeCurriculumFromSource(previous.curriculum, next) }));
@@ -69,7 +85,7 @@ export function useStudyModel(initial: BootData, today: string, notify: (text: s
   };
   /** Reloads the textbooks after a personal book changed; a deleted current book falls back to the default. */
   const reloadBooks = async () => {
-    await queue.waitForIdle();
+    await waitForSaves();
     const next = await loadCurriculumFiles();
     setFiles(next);
     const available = listAvailableBooks(next);
@@ -120,7 +136,7 @@ export function useStudyModel(initial: BootData, today: string, notify: (text: s
     ...controller, ...input, ...openers, ...progress, updateMemo, memos, reloadBooks, getDisplayItemId: displayItemId, goHome, refresh,
     async switchBook(next: string) {
       if (next === book) return;
-      await queue.waitForIdle();
+      await waitForSaves();
       await hydrateState(next);
       setState(identifyStudyState(buildAppState(next, files, { dailyNewLearningCount: state.dailyNewLearningCount ?? 1 })));
       setBook(next); setSession(null);
