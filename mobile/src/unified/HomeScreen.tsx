@@ -1,3 +1,5 @@
+import { ReadingLibrary } from "./ReadingLibrary";
+import { readingApi } from "./japaneseWords";
 import React, { useState } from "react";
 import { RefreshControl, ScrollView, View } from "react-native";
 import { toLearningPathKey } from "../../.generated/product/shared/controllers/domain/learningPath.js";
@@ -76,7 +78,7 @@ export function HomeScreen({ model, tab, today, desktop, notify }: { desktop: bo
     </View>
   </>;
   return <>
-    <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={phone ? layout.phoneBody : layout.body} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}>{phone && books}{content}</ScrollView>
+    <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={phone ? layout.phoneBody : layout.body} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}>{phone && books}<ReadingLibrary api={readingApi} language="ja" onChanged={() => { void model.refresh().catch(error => notify(String(error), "error")); }} revision={managing ? 1 : 0} />{content}</ScrollView>
     {managing && <PersonalBooks model={model} notify={notify} onClose={() => setManaging(false)} />}
   </>;
 }

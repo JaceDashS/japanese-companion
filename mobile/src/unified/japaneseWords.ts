@@ -90,3 +90,11 @@ export const IMPORT_PROMPT = `너는 일본어 단어장 정리기다. 이 메�
 9. expression이 가나로만 되어 있으면 problemType은 "meaning"이다. choices는 한국어 뜻 4개이고 answer는 meaningKo와 글자까지 같다. 오답은 품사가 같고 비슷한 뜻으로 만든다.
 10. choices 4개는 모두 서로 다르고, answer는 그중 하나와 글자까지 같다.
 11. 같은 단어가 여러 번 나오면 한 번만 넣는다. 일본어 단어로 볼 수 없는 입력은 words에 넣지 말고 skipped에 원문 그대로 넣는다.`;
+
+/** Account-bound reading library requests through the existing web or native session adapter. */
+export async function readingApi<T>(suffix: string, body?: unknown, query?: Record<string, string>): Promise<T> {
+  const response = await apiFetch(apiUrl(suffix, query), body === undefined ? { credentials: "include" } : { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const payload = await response.json();
+  if (!response.ok || !payload.ok) throw new Error(payload.error ?? "요청하지 못했습니다.");
+  return payload as T;
+}

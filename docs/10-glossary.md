@@ -39,3 +39,15 @@ A one-use server nonce bound to the Android Google account picker token. Code: n
 ## Desktop Layout
 - Definition: The wide composition with desktop navigation and dashboard columns, automatically enabled at width 1024 and short side 600 logical pixels or above. Existing explicit PC preferences override auto.
 - Code: `isDesktopLayout`. Logical pixels are layout units, not physical display pixels.
+
+## Reading Book
+- Definition: Prose material read without a required quiz; every word can open its study dictionary and personal note.
+- Code: LibraryBook kind book, ReadingLibrary, ReaderText.
+
+## Vocabulary Material
+- Definition: A collection of words used by the existing study and quiz screens.
+- Code: LibraryBook kind vocabulary; existing Japanese personal textbooks.
+
+## Personal Word Note
+- Definition: One account-owned note shared by all occurrences of the same word within a language.
+- Code: Japanese japanese_memos, English reading library notes.

@@ -1,8 +1,10 @@
+import { MaterialEditor } from "./ReadingLibrary";
+import { readingApi } from "./japaneseWords";
 import React, { useContext, useEffect, useState } from "react";
 import { View } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import type { StudyModel } from "./useStudyModel";
-import { Btn, Empty, Input, Sheet, T, Theme } from "./ui";
+import { Btn, Empty, Input, Segment, Sheet, T, Theme } from "./ui";
 import { confirmAction } from "./platform";
 import {
   createPersonalBook,
@@ -25,6 +27,8 @@ export function PersonalBooks({ model, onClose, notify }: { model: StudyModel; o
   const c = useContext(Theme);
   const [books, setBooks] = useState<PersonalBook[] | null>(null);
   const [view, setView] = useState<View_>({ kind: "list" });
+  const [materialKind, setMaterialKind] = useState("vocabulary");
+  const [creatingBook, setCreatingBook] = useState(false);
   const [title, setTitle] = useState("");
   const [text, setText] = useState("");
   const [result, setResult] = useState<ImportResult | null>(null);
@@ -37,6 +41,8 @@ export function PersonalBooks({ model, onClose, notify }: { model: StudyModel; o
     try { await work(); } catch (error) { notify(error instanceof Error ? error.message : String(error), "error"); } finally { setBusy(false); }
   };
   const changed = async () => { await load(); await model.reloadBooks(); };
+
+  if (creatingBook) return <MaterialEditor api={readingApi} allowVocabulary={false} initialTitle={title} book={undefined} onClose={() => setCreatingBook(false)} onSaved={onClose} />;
 
   if (view.kind === "import") return <Sheet title={`${view.book.title} · 단어 가져오기`} onClose={onClose}>
     <View style={{ gap: 10 }}>
@@ -97,8 +103,8 @@ export function PersonalBooks({ model, onClose, notify }: { model: StudyModel; o
   return <Sheet title="내 교재" onClose={onClose}>
     <View style={{ gap: 10 }}>
       <View style={{ flexDirection: "row", gap: 8, alignItems: "flex-end" }}>
-        <View style={{ flex: 1 }}><Input label="새 교재 이름" value={title} onChangeText={setTitle} placeholder="새 교재 이름" testID="personal-book-title" /></View>
-        <Btn variant="primary" title="추가" disabled={busy || !title.trim()} onPress={() => void run(async () => { await createPersonalBook(title); setTitle(""); await changed(); })} />
+        <View style={{ flex: 1, gap: 8 }}><Segment options={[{ key: "book", label: "책" }, { key: "vocabulary", label: "단어장" }]} value={materialKind} onChange={setMaterialKind} /><Input label="새 교재 이름" value={title} onChangeText={setTitle} placeholder="새 교재 이름" testID="personal-book-title" /></View>
+        <Btn variant="primary" title="추가" disabled={busy || !title.trim()} onPress={() => void run(async () => { if (materialKind === "book") { setCreatingBook(true); return; } await createPersonalBook(title); setTitle(""); await changed(); })} />
       </View>
       {books === null ? <T tone="muted">불러오는 중…</T> : books.length === 0 ? <Empty>아직 내 교재가 없습니다.</Empty> : books.map((book) => <View key={book.id} style={{ gap: 8, padding: 12, borderWidth: 1, borderColor: c.border, borderRadius: 10, backgroundColor: c.panel }}>
         <T weight="700">{book.title}</T>

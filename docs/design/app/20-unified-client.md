@@ -144,3 +144,7 @@ flowchart LR
  D --> E[Schedule retry date]
  E --> F[Open Day with incorrect questions first]
 ```
+
+## Reading Extension
+
+Books and persistent personal word notes are described in [Reading Books](40-reading-books.md). Existing textbook study keeps its behavior.
