@@ -16,7 +16,7 @@ import { applyQuizResultForDay, applyReviewResultForDay } from "../../.generated
 import { mergeCurriculumFromSource } from "../../.generated/product/shared/controllers/domain/curriculumSource.js";
 import { applyDayDecompositionImport, resetDayDecompositions, resetDayProblems } from "../../.generated/product/shared/controllers/domain/dayClipboardImporter.js";
 import { buildDayWordCopyPayload } from "../../.generated/product/shared/controllers/domain/dayClipboardHelpers.js";
-import { apiFetch, apiUrl, hydrateState, saveState } from "./runtime";
+import { apiFetch, apiUrl, hydrateState, loadView, saveState } from "./runtime";
 import { readAppPreferences, writeAppPreferences } from "../../.generated/product/shared/controllers/domain/appPreferences.js";
 import { identifyStudyState, displayItemId } from "./identity";
 import { loadMemos, type MemoEntry } from "./japaneseWords";
@@ -27,6 +27,10 @@ export type Preferences = {
   srs?: { maxReviewStage?: number; failureRetryDays?: number };
   planRange?: { start?: string; end?: string };
 };
+/** Build a book's study state from server files and reapply the cached screen layout. */
+function buildState(book: string, files: Record<string, unknown>, dailyNewLearningCount: number): StudyState {
+  return identifyStudyState({ ...buildAppState(book, files, { dailyNewLearningCount }), ...loadView(book) });
+}
 export type BootData = { files: Record<string, unknown>; preferences: Preferences; book: string };
 
 /** Load server content and the selected book's account-scoped cache before mounting study hooks. */
@@ -44,7 +48,7 @@ export async function loadStudy(): Promise<BootData> {
 export function useStudyModel(initial: BootData, today: string, notify: (text: string, tone?: string) => void) {
   const [files, setFiles] = useState(initial.files);
   const [book, setBook] = useState(initial.book);
-  const [state, setState] = useState<StudyState>(() => identifyStudyState(buildAppState(book, files, { dailyNewLearningCount: initial.preferences.dailyNewLearningCount ?? 1 })));
+  const [state, setState] = useState<StudyState>(() => buildState(book, files, initial.preferences.dailyNewLearningCount ?? 1));
   const [session, setSession] = useState<SessionView | null>(null);
   const [editor, setEditor] = useState({ open: false, draft: createProblemDraft(null), error: "" });
   const [srs, setSrs] = useState(() => normalizeSrsSettings(initial.preferences.srs));
@@ -90,13 +94,13 @@ export function useStudyModel(initial: BootData, today: string, notify: (text: s
     setFiles(next);
     const available = listAvailableBooks(next);
     if (available.some((item: any) => item.id === book)) {
-      setState((previous) => identifyStudyState(buildAppState(book, next, { dailyNewLearningCount: previous.dailyNewLearningCount ?? 1 })));
+      setState((previous) => buildState(book, next, previous.dailyNewLearningCount ?? 1));
       return;
     }
     const fallback = available.find((item: any) => item.id === "jlpt-one-book-n1")?.id ?? available[0]?.id;
     if (!fallback) return;
     await hydrateState(fallback);
-    setState(identifyStudyState(buildAppState(fallback, next, { dailyNewLearningCount: state.dailyNewLearningCount ?? 1 })));
+    setState(buildState(fallback, next, state.dailyNewLearningCount ?? 1));
     setBook(fallback); setSession(null);
     await writeAppPreferences({ selectedBookId: fallback });
   };
@@ -138,7 +142,7 @@ export function useStudyModel(initial: BootData, today: string, notify: (text: s
       if (next === book) return;
       await waitForSaves();
       await hydrateState(next);
-      setState(identifyStudyState(buildAppState(next, files, { dailyNewLearningCount: state.dailyNewLearningCount ?? 1 })));
+      setState(buildState(next, files, state.dailyNewLearningCount ?? 1));
       setBook(next); setSession(null);
       await writeAppPreferences({ selectedBookId: next, dailyNewLearningCount: state.dailyNewLearningCount ?? 1 });
     },

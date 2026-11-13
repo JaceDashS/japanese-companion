@@ -5,6 +5,7 @@ import { configureQueueStorage } from "../../.generated/product/shared/controlle
 import { getStorageScope, scopedStorageKey } from "../../.generated/product/shared/controllers/data/storageScope.js";
 import * as storage from "./storage";
 import { NativeQueueStorage } from "./queueStorage";
+import { pickView, type SavedView } from "./viewCache";
 
 export const client = createPlatformClient();
 let clock: { value: Clock; tick: number } | null = null;
@@ -32,13 +33,33 @@ export async function apiFetch(input: RequestInfo | URL, init?: RequestInit) {
   const result = await client.fetch(input, { ...init, headers });
   return result;
 }
-const stateKey = (book: string) => scopedStorageKey("jlpt-state-" + book);
-export async function hydrateState(book: string) { await storage.hydrate(stateKey(book)); }
-export function loadState(book: string) {
-  try { return JSON.parse(storage.read(stateKey(book)) ?? "null"); } catch { return null; }
+/** Former whole-state cache: several MB per book, over the browser storage limit. Only removed now. */
+const legacyStateKey = (book: string) => scopedStorageKey("jlpt-state-" + book);
+const viewKey = (book: string) => scopedStorageKey("jpc-view-" + book);
+const cleaned = new Set<string>();
+/** Load the small per-book view cache and remove the former whole-state cache once per book. */
+export async function hydrateState(book: string) {
+  if (!cleaned.has(book)) {
+    cleaned.add(book);
+    await storage.write(legacyStateKey(book), null).catch(console.error);
+  }
+  await storage.hydrate(viewKey(book));
 }
-export function saveState(value: unknown, book: string) { void storage.write(stateKey(book), JSON.stringify(value)).catch(console.error); }
-export function clearState(book: string) { return storage.write(stateKey(book), null); }
+/** The server is the study record source, so the shared builder never starts from a cached curriculum. */
+export function loadState(_book: string) { return null; }
+/** Screen layout values only; study records come from the server. */
+export function loadView(book: string): SavedView {
+  try { return pickView(JSON.parse(storage.read(viewKey(book)) ?? "null")); } catch { return {}; }
+}
+export function saveState(value: unknown, book: string) {
+  const text = JSON.stringify(pickView(value));
+  if (storage.read(viewKey(book)) === text) return;
+  void storage.write(viewKey(book), text).catch(console.error);
+}
+export async function clearState(book: string) {
+  await storage.write(viewKey(book), null);
+  await storage.write(legacyStateKey(book), null);
+}
 
 if (Platform.OS !== "web") {
   configureQueueStorage(() => {
