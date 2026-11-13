@@ -61,3 +61,10 @@ flowchart LR
 - BookSelect keeps the actual select element, hides its edge-bound default arrow and paints an encoded theme-colored SVG chevron at right 14px center. Right padding is 40px; native selection sheets are unchanged.
 - Example input: Change dark to light while a long book title is selected. Steps: Re-render BrowserTheme with the current palette. Expected result: Browser control and scrollbar colors update immediately, and the inset arrow leaves room for the title.
 - Scenarios: [Themed Browser Controls](../../testing/scenarios/app/30-responsive-layout.md#themed-browser-controls).
+
+## Product Brand Icon
+
+- Input: Product-owned `mobile/assets/icon.png` and the active desktop or compact layout.
+- Output: The app icon in the existing brand position without a separate colored tile.
+- Code: `mobile/src/unified/Chrome.tsx` uses React Native Image with a static require, contain sizing, an accessible product label and flexShrink zero. Japanese and English use 30px; Certificate uses 34px. The existing image is also configured for the native app and web favicon.
+- Scenario: Open the desktop study home, then resize to compact; both compositions retain the same product icon and navigation state.

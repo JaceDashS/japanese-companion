@@ -1,5 +1,5 @@
 import React, { useContext, useState } from "react";
-import { Pressable, View } from "react-native";
+import { Image, Pressable, View } from "react-native";
 import { fonts, T, Theme } from "./ui";
 
 export type Tab = "today" | "days" | "progress" | "settings";
@@ -11,8 +11,7 @@ const tabs = [
 ] as const;
 
 function BrandMark() {
-  const c = useContext(Theme);
-  return <View style={{ width: 30, height: 30, borderRadius: 9, backgroundColor: c.soft, alignItems: "center", justifyContent: "center" }}><T size={16} serif style={{ color: c.accent, lineHeight: 20 }}>和</T></View>;
+  return <Image source={require("../../assets/icon.png")} accessibilityLabel="Japanese Companion" resizeMode="contain" style={{ width: 30, height: 30, borderRadius: 9, flexShrink: 0 }} />;
 }
 
 function TopTab({ title, active, onPress }: { title: string; active: boolean; onPress: () => void }) {

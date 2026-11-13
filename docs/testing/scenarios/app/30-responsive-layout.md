@@ -39,3 +39,9 @@
 - Steps: Read select arrow position and padding, switch the theme, and inspect computed scrollbar colors on an overflowing nested panel.
 - Expected result: Chevron position is right 14px center, right padding is 40px, and the thumb and track use the active dim and panel tokens. Color scheme changes with the theme; select interaction remains native and desktop composition is unchanged.
 - Verified 2026-11-10: Both products' dark and light computed scrollbar colors matched their palette, with the expected arrow position and padding. Type checks passed. Operating-system popup appearance and physical Android rendering were not validated.
+
+## Product Brand Icon
+
+- Input: The product study home in desktop and compact layouts, dark and light themes.
+- Steps: Inspect the brand, resize between layouts and inspect the accessible image name.
+- Expected result: The product app icon replaces the text monogram, remains contained at the existing brand size and exposes the product name. Navigation and study state remain unchanged.

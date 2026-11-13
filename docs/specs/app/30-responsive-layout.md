@@ -19,3 +19,7 @@
 - Match browser scrollbars and system color scheme to the current dark or light palette, including nested scrolling panels. Keep desktop composition and native scroll behavior unchanged.
 - In mobile book dropdowns, place the decorative chevron 14 pixels from the right and reserve 40 pixels of right padding for long titles. Keep the real select semantics and keyboard interaction.
 - Example input: A long book title in the light theme. Steps: Open mobile home and switch the theme. Expected result: The arrow stays inset and scrollbar colors follow the active palette without changing book selection.
+
+## Product Brand Icon
+
+The navigation brand uses this product app icon instead of a text monogram in desktop and compact layouts. It keeps its existing size and exposes the product name as its accessible label.
