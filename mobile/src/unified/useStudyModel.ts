@@ -116,7 +116,7 @@ export function useStudyModel(initial: BootData, today: string, notify: (text: s
       return value.trim() ? [...rest, { expression, memo: value, reading: String(target?.reading ?? ""), meaningKo: String(target?.meaningKo ?? "") }] : rest;
     });
   };
-  const goHome = () => { setSession(null); void refresh().catch((error) => notify(String(error), "error")); };
+  const goHome = () => { setSession(null); };
   const controller = createSessionController({
     session, sessionItems, currentItem, problemEditor: editor, setProblemEditor: setEditor,
     setSession, setState, stateCurriculum: state.curriculum, today, ...progress,

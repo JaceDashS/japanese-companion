@@ -87,8 +87,7 @@ export function SessionScreen({ model, isPhone, notify }: { model: StudyModel; i
   const item = model.currentItem;
   const study = session.phase === "study";
   const quiz = session.phase === "quiz";
-  const queued = model.queue.items.some((entry: any) => entry.status === "pending");
-  const back = useMainReturn({ busy: queued, dirty: quiz && Object.keys(session.graded ?? {}).length > 0, onReturn: model.goHome });
+  const back = useMainReturn({ busy: false, dirty: quiz && Object.keys(session.graded ?? {}).length > 0, onReturn: model.goHome });
   const toggleNotes = () => isPhone ? setSheet((previous) => previous === "notes" ? null : "notes") : setPanel((previous) => previous === "notes" ? "items" : "notes");
   useSessionKeys(model, toggleNotes, back);
   const resizer = useMemo(() => PanResponder.create({ onStartShouldSetPanResponder: () => true, onPanResponderGrant: () => { resizeOrigin.current = width; }, onPanResponderMove: (_, gesture) => setWidth(Math.max(260, Math.min(560, resizeOrigin.current - gesture.dx))) }), [width]);
@@ -162,14 +161,14 @@ export function SessionScreen({ model, isPhone, notify }: { model: StudyModel; i
     </>}
     {session.phase === "done" && <WordCard>
       <T size={24} weight="700" style={{ textAlign: "center" }}>{session.reviewedCount ?? 0}개 중 {session.passCount ?? 0}개 정답</T>
-      <Btn variant="primary" title="확인" disabled={queued} onPress={model.goHome} />
+      <Btn variant="primary" title="확인" onPress={model.goHome} />
     </WordCard>}
     {!!model.queue.items.length && <T size={12.2} tone="dim">전송 대기 {model.queue.items.length}건 · 설정에서 상태와 재시도를 확인할 수 있습니다.</T>}
   </>;
   const split = !isPhone && panel !== null;
   return <View style={[{ flex: 1, backgroundColor: c.bg }]}>
     <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 8, paddingVertical: 10, paddingHorizontal: 14, borderBottomWidth: 1, borderColor: c.border, backgroundColor: c.header }}>
-      <Btn size="icon" title="←" label="세션 닫기" disabled={queued} onPress={back} testID="back-home" />
+      <Btn size="icon" title="←" label="세션 닫기" onPress={back} testID="back-home" />
       <View style={{ minWidth: 0, flexShrink: 1 }}>
         <T size={14.7} weight="700" numberOfLines={1}>{model.sessionDay?.title}</T>
         <T size={11.4} mono tone="dim">{session.phase === "done" ? "-" : session.index + 1}/{model.sessionItems.length} · {session.mode === "review" ? "복습" : "학습"} · {study ? "단어" : quiz ? "문제" : "완료"}</T>
@@ -200,7 +199,7 @@ export function SessionScreen({ model, isPhone, notify }: { model: StudyModel; i
         <NavButton label="이전" title="←" phone={isPhone} disabled={session.index === 0} onPress={quiz ? model.goPrevQuizItem : model.goPrevStudyItem} />
         {!isPhone && <View style={{ flex: 1 }} />}
         <NavButton label="다음" title="→" phone={isPhone} primary disabled={quiz && !model.canGoQuizNext()} onPress={quiz ? model.goNextQuizItem : model.goNextStudyItem} />
-      </> : <><View style={{ flex: 1 }} /><Btn variant="primary" size="lg" title="홈으로" disabled={queued} onPress={model.goHome} /></>}
+      </> : <><View style={{ flex: 1 }} /><Btn variant="primary" size="lg" title="홈으로" onPress={model.goHome} /></>}
     </View>
     {sheet === "items" && <Sheet title={`${model.sessionDay?.title} 목록`} onClose={() => setSheet(null)}>{items}</Sheet>}
     {sheet === "notes" && <Sheet title="현재 단어 노트" onClose={() => setSheet(null)}>{notes}</Sheet>}
