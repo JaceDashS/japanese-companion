@@ -276,6 +276,15 @@ export class CompanionClient {
   get<T>(suffix: string): Promise<T> {
     return this.serialize(() => this.request<T>(this.route(suffix)));
   }
+  /** Posts public feedback with this product's canonical identity through the current session. */
+  submitFeedback(content: string): Promise<{ id: number }> {
+    const account = this.user?.id;
+    return this.serialize(() => {
+      if (!account || account !== this.user?.id) throw new ApiError(401, "UNAUTHENTICATED");
+      if (!content.trim()) throw new Error("Feedback is required");
+      return this.request("/comments", { content: content.trim(), sourceAppId: 5 }, account);
+    });
+  }
   /** Send an account-bound write once; an explicit user retry is required after a network failure. */
   post<T>(suffix: string, body: unknown, account: string): Promise<T> {
     return this.serialize(() =>

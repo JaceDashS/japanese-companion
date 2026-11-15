@@ -249,3 +249,24 @@ test("native Google exchange captures encrypted session cookies and sends CSRF o
   await assert.rejects(browser.nativeGoogleChallenge(), /native transport/);
   await assert.rejects(browser.nativeGoogleLogin("token", nonce, true), /native transport/);
 });
+
+for (const browser of [true, false]) test(`feedback uses canonical identity and the existing ${browser ? "browser" : "native"} session`, async () => {
+  const calls: { url: string; init: RequestInit }[] = [];
+  const client = new CompanionClient("https://api.jace-s.com", "japanese", memory(), (async (url, init) => {
+    calls.push({ url: String(url), init: init ?? {} });
+    if (String(url).endsWith("/auth/login")) return response({ user, csrfToken: "feedback-csrf" }, 200, ["session=feedback-session; Path=/", "csrf=feedback-csrf; Path=/"]);
+    return response({ id: 42 }, 201);
+  }) as typeof fetch, browser);
+  await assert.rejects(client.submitFeedback("hello"), /UNAUTHENTICATED/);
+  assert.equal(calls.length, 0);
+  await client.login("a", "password", true);
+  await assert.rejects(client.submitFeedback("  "), /Feedback is required/);
+  assert.deepEqual(await client.submitFeedback("  hello  "), { id: 42 });
+  const write = calls.at(-1)!;
+  assert.equal(write.url, "https://api.jace-s.com/comments");
+  assert.deepEqual(JSON.parse(String(write.init.body)), { content: "hello", sourceAppId: 5 });
+  const headers = write.init.headers as Record<string, string>;
+  assert.equal(headers["x-csrf-token"], "feedback-csrf");
+  assert.equal(headers["x-companion-user"], user.id);
+  assert.equal(browser ? write.init.credentials : headers.Cookie, browser ? "include" : "session=feedback-session; csrf=feedback-csrf");
+});

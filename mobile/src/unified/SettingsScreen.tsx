@@ -1,3 +1,4 @@
+import { FeedbackSheet } from "./FeedbackSheet";
 import React, { useContext, useEffect, useState } from "react";
 import { Linking, Platform, Pressable, ScrollView, View } from "react-native";
 import * as Clipboard from "expo-clipboard";
@@ -11,6 +12,7 @@ import { SITE_ORIGIN } from "./config";
 export type Display = { theme: "dark" | "light"; device: "auto" | "phone" | "pc" };
 /** Shared account, scheduling, display, backup and source-write retry settings. */
 export function SettingsScreen({ model, display, setDisplay, notify, onLogout, onReset, phone }: { phone: boolean; model: StudyModel; display: Display; setDisplay: (next: Display) => void; notify: (text: string, tone?: string) => void; onLogout: () => Promise<void>; onReset: () => void }) {
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [account, setAccount] = useState<User | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -44,7 +46,9 @@ export function SettingsScreen({ model, display, setDisplay, notify, onLogout, o
   ] : [];
   const queueLabel = (status: string) => status === "failed" ? "실패" : status === "retrying" ? "재시도 대기" : "전송 대기";
   const failed = model.queue.items.filter((entry: any) => entry.status === "failed").length;
-  return <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={phone ? layout.phoneBody : layout.body}>
+  return <>
+    {feedbackOpen && <FeedbackSheet send={content => client.submitFeedback(content)} onClose={() => setFeedbackOpen(false)} />}
+    <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={phone ? layout.phoneBody : layout.body}>
     <Card title="계정">
       {account ? <View style={{ gap: 6, marginBottom: 2 }}>{rows.map(([name, value]) => <View key={name} style={{ flexDirection: "row", gap: 16 }}><T size={13.1} tone="muted" style={{ width: 84, lineHeight: 24 }}>{name}</T><T size={16} selectable style={{ flex: 1 }}>{value}</T></View>)}</View>
         : <T size={13.1} tone="muted">{error ? "계정 정보를 불러오지 못했습니다." : "계정 정보를 불러오는 중"}</T>}
@@ -54,7 +58,7 @@ export function SettingsScreen({ model, display, setDisplay, notify, onLogout, o
       </View>
       <View style={{ flexDirection: "row", gap: 8 }}>
         <Btn title="개발자에 대해" style={{ flex: 1 }} onPress={() => { const url = SITE_ORIGIN + "/about"; if (Platform.OS === "web" && typeof window !== "undefined") window.open(url, "_blank", "noopener,noreferrer"); else void Linking.openURL(url); }} testID="about-developer" />
-        <Btn title="피드백" style={{ flex: 1 }} onPress={() => void Linking.openURL(SITE_ORIGIN + "/feedback/5")} testID="feedback" />
+        <Btn title="피드백" style={{ flex: 1 }} onPress={() => setFeedbackOpen(true)} testID="feedback" />
       </View>
       {Platform.OS === "web" && <T size={13.1} tone="muted">같은 브라우저의 다른 jace-s 앱과 메인 사이트도 함께 로그아웃됩니다.</T>}
     </Card>
@@ -104,7 +108,7 @@ export function SettingsScreen({ model, display, setDisplay, notify, onLogout, o
       </Pressable>
       {debug && <View style={{ paddingHorizontal: 16, paddingBottom: 14, gap: 4 }}>{model.dashboard.debugLogs.map((text: string, index: number) => <T key={index} size={11.5} mono tone="dim">{text}</T>)}</View>}
     </View>
-  </ScrollView>;
+  </ScrollView></>;
 }
 
 /** Former settings row: a label with an optional hint on the left and its control on the right. */

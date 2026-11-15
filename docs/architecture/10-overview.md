@@ -32,3 +32,7 @@ The shared Expo screens select desktop or compact composition from available log
 ## Reading Materials
 
 ReadingLibrary renders prose and vocabulary management alongside the existing study screens. ReaderText uses native word actions or inline keyboard accessible web buttons. Account session transports call the platform reading API, which uses the serialized companion account store. Japanese definitions and notes reuse curriculum SQL; English vocabulary and notes use its account library. Server segmentation supplies the same word boundaries to web and native. See [Reading Books](../design/app/40-reading-books.md).
+
+## Feedback Composer
+
+The app opens feedback locally and retains the existing comments API and authentication boundary. See [Feedback Dialog Design](../design/app/98-feedback-dialogs.md) for the UI and transport paths.

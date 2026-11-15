@@ -51,3 +51,7 @@ A one-use server nonce bound to the Android Google account picker token. Code: n
 ## Personal Word Note
 - Definition: One account-owned note shared by all occurrences of the same word within a language.
 - Code: Japanese japanese_memos, English reading library notes.
+
+## Feedback Composer
+
+An in app writing dialog that posts a public comment with the canonical product identity. Opening it keeps the current app screen in place.

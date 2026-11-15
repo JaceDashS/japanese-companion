@@ -6,3 +6,5 @@
 - [Responsive Layout](30-responsive-layout.md) — Shared desktop and compact UI with tablet and phone boundaries
 
 - [Reading Books](40-reading-books.md) — Prose reading, any word lookup and unique personal notes
+
+- [Feedback Dialogs](98-feedback-dialogs.md) — In app feedback writing and motion preferences

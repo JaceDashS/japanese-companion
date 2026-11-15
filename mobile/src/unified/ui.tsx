@@ -166,7 +166,7 @@ export function Spinner() {
 }
 
 /** Bottom sheet with a grip on phones and a centered dialog on PC, as in the former UI. */
-export function Sheet({ title, onClose, children, footer }: { title: string; onClose: () => void; children: React.ReactNode; footer?: React.ReactNode }) {
+export function Sheet({ title, onClose, children, footer, reducedMotion = false }: { title: string; onClose: () => void; children: React.ReactNode; footer?: React.ReactNode; reducedMotion?: boolean }) {
   const c = useContext(Theme);
   const { phone } = useContext(Device);
   useEffect(() => {
@@ -175,7 +175,7 @@ export function Sheet({ title, onClose, children, footer }: { title: string; onC
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
-  return <Modal transparent animationType={phone ? "slide" : "fade"} onRequestClose={onClose}>
+  return <Modal transparent animationType={reducedMotion ? "none" : phone ? "slide" : "fade"} onRequestClose={onClose}>
     <View style={{ flex: 1, backgroundColor: c.backdrop, justifyContent: phone ? "flex-end" : "center", alignItems: phone ? "stretch" : "center", padding: phone ? 0 : 28 }}>
       <Pressable accessibilityLabel="닫기" onPress={onClose} style={StyleSheet.absoluteFill} />
       <View accessibilityRole="none" aria-modal style={{ width: "100%", maxWidth: phone ? undefined : 680, maxHeight: phone ? "86%" : "78%", backgroundColor: c.panel, borderWidth: 1, borderColor: c.border, borderBottomWidth: phone ? 0 : 1, borderRadius: phone ? 0 : 16, borderTopLeftRadius: phone ? 20 : 16, borderTopRightRadius: phone ? 20 : 16 }}>
