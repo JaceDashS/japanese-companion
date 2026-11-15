@@ -150,3 +150,30 @@ test("responsive layout excludes landscape phones but admits wide tablets and de
   assert.equal(isDesktopLayout(1440, 900, "phone"), false);
   assert.equal(isDesktopLayout(390, 844, "pc"), true);
 });
+
+const controllerPath = "../../shared/controllers/domain/sessionController.ts";
+const { createSessionController } = await import(controllerPath);
+test("last quiz next goes home or studies only failures, then goes home", () => {
+  for (const failed of [false, true]) {
+    let session: any = { phase: "quiz", mode: "review", unitId: "unit", dayId: "day", index: 1, graded: { a: "PASS", b: failed ? "FAIL" : "PASS" } };
+    let homes = 0;
+    let saves = 0;
+    const items = ["a", "b"].map(id => ({ id, problem: { choices: ["yes"] } }));
+    const options: any = {
+      session, sessionItems: items, currentItem: items[1], stateCurriculum: [], today: "2026-11-16",
+      setSession: (update: any) => { session = update(session); }, setState: () => {},
+      getPathDay: () => ({ items }), normalizeProblem: (value: any) => value,
+      applyReviewResultForDay: () => ({ day: { items }, allPass: !failed }),
+      persistSourceDayResult: () => { saves++; }, goHome: () => { homes++; }, markDayAttemptNow: () => {},
+    };
+    createSessionController(options).goNextQuizItem();
+    assert.equal(saves, 1);
+    assert.equal(homes, failed ? 0 : 1);
+    if (failed) {
+      assert.equal(session.phase, "study"); assert.equal(session.postQuizStudy, true);
+      assert.deepEqual(session.itemIds, ["b"]); assert.equal(session.index, 0);
+      createSessionController({ ...options, session, sessionItems: [items[1]] }).goNextStudyItem();
+      assert.equal(homes, 1); assert.equal(saves, 1);
+    }
+  }
+});

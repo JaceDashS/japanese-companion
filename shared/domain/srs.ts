@@ -71,7 +71,7 @@ export function getFailStageState(day, today, settings = DEFAULT_SRS_SETTINGS) {
   return {
     stage: Math.max(1, currentStage - 1),
     stageCompleteDate: day?.stageCompleteDate ?? null,
-    nextReviewDate: addDays(today, normalizedSettings.failureRetryDays),
+    nextReviewDate: addDays(today, 1),
   };
 }
 

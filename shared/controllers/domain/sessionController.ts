@@ -77,28 +77,6 @@ export function createSessionController({
     return canFinalizeQuiz();
   };
 
-  const finishSession = ({
-    allPass,
-    passCount,
-    reviewedCount,
-  }: {
-    allPass?: boolean;
-    passCount: number;
-    reviewedCount: number;
-  }) => {
-    setSession((prev) => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        phase: "done",
-        allPass,
-        passCount,
-        reviewedCount,
-        postQuizStudy: false,
-      };
-    });
-  };
-
   const finalizeQuiz = (gradedMap: Record<string, QuizResult> = {}) => {
     if (!session || !canFinalizeQuiz()) return;
 
@@ -121,13 +99,14 @@ export function createSessionController({
       curriculum: replaceDay(prev.curriculum, path, nextDay),
     }));
 
-    finishSession({
-      allPass,
-      passCount,
-      reviewedCount,
-    });
-
     void persistSourceDayResult(day, nextDay, path);
+
+    const failedIds = sessionItems.filter(item => gradedMap[item.id] === "FAIL").map(item => item.id);
+    if (failedIds.length === 0) goHome();
+    else setSession(prev => prev && ({
+      ...prev, phase: "study", index: 0, itemIds: failedIds,
+      postQuizStudy: true, allPass, passCount, reviewedCount,
+    }));
   };
 
   const goPrevStudyItem = () => {
