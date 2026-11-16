@@ -26,8 +26,8 @@ function MainLink() {
   return <Pressable accessibilityRole="link" onPress={() => void Linking.openURL(SITE_ORIGIN)}><T size={13.1} tone="muted" style={{ textDecorationLine: "underline" }}>메인 페이지로</T></Pressable>;
 }
 
-export function LoginScreen({ error, busy, onLogin, children, remember = true, onRememberChange }: {
-  name: string; error: string; busy: boolean; onLogin: (u: string, p: string) => void; children?: React.ReactNode; remember?: boolean; onRememberChange?: (value: boolean) => void;
+export function LoginScreen({ error, busy, onLogin, onDevLogin, children, remember = true, onRememberChange }: {
+  name: string; error: string; busy: boolean; onLogin: (u: string, p: string) => void; onDevLogin?: () => void; children?: React.ReactNode; remember?: boolean; onRememberChange?: (value: boolean) => void;
 }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -40,6 +40,7 @@ export function LoginScreen({ error, busy, onLogin, children, remember = true, o
     {onRememberChange && <Check label="로그인 유지" checked={remember} onChange={onRememberChange} />}
     {!!error && <T size={13.1} tone="muted" selectable>{error}</T>}
     <Btn variant="primary" title={busy ? "로그인 중" : "로그인"} disabled={busy || !username.trim() || !password} testID="login" onPress={submit} />
+    {__DEV__ && onDevLogin && <Btn title={busy ? "접속 중" : "개발 모드: 로그인 없이 들어가기"} disabled={busy} testID="dev-login" onPress={onDevLogin} />}
     <MainLink />
   </Card></Gate>;
 }

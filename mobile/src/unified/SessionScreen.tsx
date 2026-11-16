@@ -87,7 +87,7 @@ export function SessionScreen({ model, isPhone, notify }: { model: StudyModel; i
   const item = model.currentItem;
   const study = session.phase === "study";
   const quiz = session.phase === "quiz";
-  const back = useMainReturn({ busy: false, dirty: quiz && Object.keys(session.graded ?? {}).length > 0, onReturn: model.goHome });
+  const back = useMainReturn({ busy: false, dirty: quiz && Object.keys(session.graded ?? {}).length > 0, subPath: "session", onReturn: model.goHome });
   const toggleNotes = () => isPhone ? setSheet((previous) => previous === "notes" ? null : "notes") : setPanel((previous) => previous === "notes" ? "items" : "notes");
   useSessionKeys(model, toggleNotes, back);
   const resizer = useMemo(() => PanResponder.create({ onStartShouldSetPanResponder: () => true, onPanResponderGrant: () => { resizeOrigin.current = width; }, onPanResponderMove: (_, gesture) => setWidth(Math.max(260, Math.min(560, resizeOrigin.current - gesture.dx))) }), [width]);

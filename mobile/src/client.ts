@@ -181,6 +181,17 @@ export class CompanionClient {
       return result.user;
     });
   }
+  /** Development-only local login without credentials. */
+  devLogin(): Promise<User> {
+    return this.serialize(async () => {
+      await this.clear();
+      const result = await this.request<{ user: User }>("/auth/dev-login", {});
+      if (!this.browser && !this.credentials)
+        throw new Error("로그인 세션을 저장하지 못했습니다.");
+      this.user = result.user;
+      return result.user;
+    });
+  }
   /** Read complete account details through the current authenticated session. */
   account(): Promise<User> {
     return this.serialize(async () => {
