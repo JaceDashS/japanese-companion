@@ -5,18 +5,15 @@ import { RefreshControl, ScrollView, View } from "react-native";
 import { toLearningPathKey } from "../../.generated/product/shared/controllers/domain/learningPath.js";
 import { getStageLabel } from "../../.generated/product/shared/domain/constants.js";
 import type { StudyModel } from "./useStudyModel";
-import { Card, layout, Segment, T } from "./ui";
-import { BookSelect } from "./BookSelect";
+import { Card, layout, T } from "./ui";
 import { DayCard, DayGrid, ProgressPanel, RecentDays, StageChart, Stats, WordActionCard } from "./Dashboard";
-import { Btn } from "./ui";
 import { PersonalBooks } from "./PersonalBooks";
 
 /** Today, Day and progress tabs in the former dashboard composition, backed by the shared dashboard builders. */
 export function HomeScreen({ model, tab, today, desktop, notify }: { desktop: boolean; model: StudyModel; tab: "today" | "days" | "progress"; today: string; notify: (text: string, tone?: string) => void }) {
   const [refreshing, setRefreshing] = useState(false);
-  const [switchingBook, setSwitchingBook] = useState(false);
   const [managing, setManaging] = useState(false);
-  const manage = <Btn title="내 교재" onPress={() => setManaging(true)} testID="personal-books" />;
+  const [reading, setReading] = useState(false);
   const { dashboard: d, srs } = model;
   const phone = !desktop;
   const pending = new Set(model.queue.items.filter((entry: any) => entry.status !== "failed").map((entry: any) => entry.learningPath && toLearningPathKey(entry.learningPath)));
@@ -24,14 +21,6 @@ export function HomeScreen({ model, tab, today, desktop, notify }: { desktop: bo
   const learning = d.pendingLearningRows.filter((row: any) => !pending.has(toLearningPathKey(row.path)));
   const rows = d.allDayRows;
   const refresh = () => { setRefreshing(true); model.refresh().catch((error) => notify(String(error), "error")).finally(() => setRefreshing(false)); };
-  const books = phone ? <View style={{ gap: 8 }}><BookSelect books={model.books} value={model.book} disabled={switchingBook} onChange={(id) => {
-    setSwitchingBook(true);
-    void model.switchBook(id).catch((error) => notify(String(error), "error")).finally(() => setSwitchingBook(false));
-  }} /><View style={{ flexDirection: "row" }}>{manage}</View></View> : <View style={{ flexDirection: "row", alignItems: "center", gap: 10, maxWidth: desktop ? 640 : undefined, flexWrap: "wrap" }}>
-    {model.books.length > 1 && <><T size={12.2} tone="dim">교재</T>
-    <Segment options={model.books.map((book: any) => ({ key: book.id, label: book.title }))} value={model.book} onChange={(id) => void model.switchBook(String(id)).catch((error) => notify(String(error), "error"))} /></>}
-    {manage}
-  </View>;
   const wordCard = (row: any, review: boolean) => {
     const mode = review ? "복습" : "학습";
     return <WordActionCard key={(review ? "r:" : "l:") + toLearningPathKey(row.path)} title={row.dayTitle} chip={row.failCount > 0 ? `${mode}・실패` : mode} chipTone={row.failCount > 0 ? "fail" : review ? "review" : "learning"}
@@ -65,7 +54,6 @@ export function HomeScreen({ model, tab, today, desktop, notify }: { desktop: bo
   else content = <>
     <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: 12 }}>
       <View style={{ minWidth: 0 }}><T size={21.6} serif weight="700" style={{ lineHeight: 30 }}>오늘 할 학습</T><T size={13.1} tone="muted" style={{ marginTop: 5 }}>{today} · 복습 {reviews.length}개 · 신규 {learning.length}개</T></View>
-      {books}
     </View>
     {stats}
     <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 16 }}>
@@ -78,7 +66,7 @@ export function HomeScreen({ model, tab, today, desktop, notify }: { desktop: bo
     </View>
   </>;
   return <>
-    <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={phone ? layout.phoneBody : layout.body} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}>{phone && books}<ReadingLibrary api={readingApi} language="ja" onChanged={() => { void model.refresh().catch(error => notify(String(error), "error")); }} revision={managing ? 1 : 0} />{content}</ScrollView>
+    <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={phone ? layout.phoneBody : layout.body} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}><ReadingLibrary api={readingApi} language="ja" onAdd={() => setManaging(true)} catalog={{ books: model.books, value: model.book, onChange: id => { void model.switchBook(id).catch(error => notify(String(error), "error")); }, onReadingChange: setReading }} onChanged={() => { void model.refresh().catch(error => notify(String(error), "error")); }} revision={managing ? 1 : 0} />{!reading && content}</ScrollView>
     {managing && <PersonalBooks model={model} notify={notify} onClose={() => setManaging(false)} />}
   </>;
 }

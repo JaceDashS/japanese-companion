@@ -4,7 +4,7 @@ import React, { useContext, useEffect, useState } from "react";
 import { View } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import type { StudyModel } from "./useStudyModel";
-import { Btn, Empty, Input, Segment, Sheet, T, Theme } from "./ui";
+import { Btn, Empty, Input, Sheet, T, Theme } from "./ui";
 import { confirmAction } from "./platform";
 import {
   createPersonalBook,
@@ -27,7 +27,7 @@ export function PersonalBooks({ model, onClose, notify }: { model: StudyModel; o
   const c = useContext(Theme);
   const [books, setBooks] = useState<PersonalBook[] | null>(null);
   const [view, setView] = useState<View_>({ kind: "list" });
-  const [materialKind, setMaterialKind] = useState("vocabulary");
+  const [materialKind, setMaterialKind] = useState<"vocabulary" | null>(null);
   const [creatingBook, setCreatingBook] = useState(false);
   const [title, setTitle] = useState("");
   const [text, setText] = useState("");
@@ -41,6 +41,13 @@ export function PersonalBooks({ model, onClose, notify }: { model: StudyModel; o
     try { await work(); } catch (error) { notify(error instanceof Error ? error.message : String(error), "error"); } finally { setBusy(false); }
   };
   const changed = async () => { await load(); await model.reloadBooks(); };
+
+  if (!materialKind && !creatingBook) return <Sheet title="단어장/책 추가" onClose={onClose}>
+    <View style={{ gap: 12 }}><T>추가할 종류를 선택하세요.</T>
+      <Btn title="단어장" onPress={() => setMaterialKind("vocabulary")} testID="add-vocabulary" />
+      <Btn title="책" onPress={() => setCreatingBook(true)} testID="add-reading-book" />
+    </View>
+  </Sheet>;
 
   if (creatingBook) return <MaterialEditor api={readingApi} allowVocabulary={false} initialTitle={title} book={undefined} onClose={() => setCreatingBook(false)} onSaved={onClose} />;
 
@@ -87,9 +94,9 @@ export function PersonalBooks({ model, onClose, notify }: { model: StudyModel; o
     </Sheet>;
   }
 
-  if (view.kind === "rename") return <Sheet title="교재 이름 바꾸기" onClose={onClose}>
+  if (view.kind === "rename") return <Sheet title="단어장 이름 바꾸기" onClose={onClose}>
     <View style={{ gap: 10 }}>
-      <Input label="교재 이름" value={title} onChangeText={setTitle} placeholder={view.book.title} />
+      <Input label="단어장 이름" value={title} onChangeText={setTitle} placeholder={view.book.title} />
       <View style={{ flexDirection: "row", gap: 8 }}>
         <Btn variant="primary" title="저장" disabled={busy || !title.trim()} onPress={() => void run(async () => {
           await renamePersonalBook(view.book.id, title);
@@ -100,13 +107,13 @@ export function PersonalBooks({ model, onClose, notify }: { model: StudyModel; o
     </View>
   </Sheet>;
 
-  return <Sheet title="내 교재" onClose={onClose}>
+  return <Sheet title="단어장 추가" onClose={onClose}>
     <View style={{ gap: 10 }}>
       <View style={{ flexDirection: "row", gap: 8, alignItems: "flex-end" }}>
-        <View style={{ flex: 1, gap: 8 }}><Segment options={[{ key: "book", label: "책" }, { key: "vocabulary", label: "단어장" }]} value={materialKind} onChange={setMaterialKind} /><Input label="새 교재 이름" value={title} onChangeText={setTitle} placeholder="새 교재 이름" testID="personal-book-title" /></View>
-        <Btn variant="primary" title="추가" disabled={busy || !title.trim()} onPress={() => void run(async () => { if (materialKind === "book") { setCreatingBook(true); return; } await createPersonalBook(title); setTitle(""); await changed(); })} />
+        <View style={{ flex: 1, gap: 8 }}><Input label="새 단어장 이름" value={title} onChangeText={setTitle} placeholder="새 단어장 이름" testID="personal-book-title" /></View>
+        <Btn variant="primary" title="추가" disabled={busy || !title.trim()} onPress={() => void run(async () => { const book = await createPersonalBook(title); setTitle(""); await changed(); setText(""); setResult(null); setView({ kind: "import", book }); })} />
       </View>
-      {books === null ? <T tone="muted">불러오는 중…</T> : books.length === 0 ? <Empty>아직 내 교재가 없습니다.</Empty> : books.map((book) => <View key={book.id} style={{ gap: 8, padding: 12, borderWidth: 1, borderColor: c.border, borderRadius: 10, backgroundColor: c.panel }}>
+      {books === null ? <T tone="muted">불러오는 중…</T> : books.length === 0 ? <Empty>아직 단어장가 없습니다.</Empty> : books.map((book) => <View key={book.id} style={{ gap: 8, padding: 12, borderWidth: 1, borderColor: c.border, borderRadius: 10, backgroundColor: c.panel }}>
         <T weight="700">{book.title}</T>
         <T size={12.2} tone="dim">단어 {book.wordCount}개 · Day {book.dayCount}개</T>
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
