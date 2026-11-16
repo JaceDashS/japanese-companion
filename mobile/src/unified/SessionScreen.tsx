@@ -129,10 +129,14 @@ export function SessionScreen({ model, isPhone, notify }: { model: StudyModel; i
         </View>
         <Furigana item={item} visible={reading} size={wordSize} />
         {meaning && <T size={16.3} tone="muted" selectable style={{ textAlign: "center" }}>{item.meaningKo}</T>}
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, justifyContent: "center", alignItems: "center" }}>
-          <Switch on={reading} onToggle={() => setReading(!reading)} label="후리가나" /><Switch on={meaning} onToggle={() => setMeaning(!meaning)} label="뜻" />
-          <Btn variant="ghost" title="단어 복사" onPress={() => void copy(String(item.expression ?? ""))} />
-          {relatedButton}
+        <View style={{ flexDirection: isPhone ? "column" : "row", gap: 6, justifyContent: "center", alignItems: "center" }}>
+          <View style={{ flexDirection: "row", gap: 6, alignItems: "center" }}>
+            <Switch on={reading} onToggle={() => setReading(!reading)} label="후리가나" /><Switch on={meaning} onToggle={() => setMeaning(!meaning)} label="뜻" />
+          </View>
+          <View style={{ flexDirection: "row", gap: 6, alignItems: "center" }}>
+            <Btn variant="ghost" title="단어 복사" onPress={() => void copy(String(item.expression ?? ""))} />
+            {relatedButton}
+          </View>
         </View>
       </WordCard>
       <MemoEditor key={item.id + ":personal"} label="내 메모" value={String(item.memo ?? "")} placeholder="눌러서 메모 입력" onCommit={(value) => model.updateMemo(item.id, "memo", value)} render={markdown} />
