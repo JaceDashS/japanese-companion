@@ -1,3 +1,5 @@
+import { StudyMarkdown } from "../StudyMarkdown";
+import { client } from "./runtime";
 import { BookSelect } from "./BookSelect";
 import { ReaderText } from "./ReaderText";
 import React, { useContext, useEffect, useRef, useState } from "react";
@@ -77,7 +79,8 @@ export function WordLookup({ api, word, onClose, onSaved }: { api: LibraryApi; w
     {detail && <>
       {!!detail.reading && <><T tone="dim" size={12}>후리가나</T><T>{detail.reading}</T></>}
       <T tone="dim" size={12}>뜻</T><T>{detail.meaning || "등록된 뜻이 없습니다."}</T>
-      <T tone="dim" size={12}>학습 노트</T><T>{detail.studyNote || "학습 노트가 없습니다."}</T>
+      <T tone="dim" size={12}>학습 노트</T>
+      {detail.studyNote.trim() ? <StudyMarkdown text={detail.studyNote} client={client} /> : <T>학습 노트가 없습니다.</T>}
       <Input multiline label="내 메모" value={note} onChangeText={value => { setNote(value); setSaved(false); }} placeholder="이 단어의 메모" />
       <T size={12} tone="dim">같은 단어의 메모는 다른 교재에서도 함께 바뀝니다.</T>
       <Btn title={busy ? "저장 중…" : "메모 저장"} disabled={busy} onPress={() => void save()} />
