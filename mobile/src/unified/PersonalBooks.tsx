@@ -22,7 +22,7 @@ type View_ = { kind: "list" } | { kind: "import"; book: PersonalBook } | { kind:
 const REASON = { exists: "이미 있음", repeated: "중복 입력" } as const;
 
 /** Personal textbooks: add, rename and delete books, import words with the prompt, and delete single words. */
-export function PersonalBooks({ model, onClose, notify }: { model: StudyModel; onClose: () => void; notify: (text: string, tone?: string) => void }) {
+export function PersonalBooks({ model, onClose, notify, importBookId }: { model: StudyModel; onClose: () => void; notify: (text: string, tone?: string) => void; importBookId?: string }) {
   const c = useContext(Theme);
   const [books, setBooks] = useState<PersonalBook[] | null>(null);
   const [view, setView] = useState<View_>({ kind: "list" });
@@ -30,8 +30,9 @@ export function PersonalBooks({ model, onClose, notify }: { model: StudyModel; o
   const [text, setText] = useState("");
   const [result, setResult] = useState<ImportResult | null>(null);
   const [busy, setBusy] = useState(false);
-  const load = () => listPersonalBooks().then(setBooks);
-  useEffect(() => { void load().catch((error) => notify(String(error), "error")); }, []);
+  const load = () => listPersonalBooks().then((list) => { setBooks(list); return list; });
+  // Opened from 단어 입력: go straight to the input of the selected personal vocabulary, else to the list.
+  useEffect(() => { void load().then((list) => { const target = list.find((book) => book.id === importBookId); if (target) setView({ kind: "import", book: target }); }).catch((error) => notify(String(error), "error")); }, []);
   const run = async (work: () => Promise<unknown>) => {
     if (busy) return;
     setBusy(true);

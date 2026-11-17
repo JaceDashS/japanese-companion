@@ -30,7 +30,8 @@ export function Chrome({ desktop, section, onSectionChange, tab, today, dueCount
 }) {
   const c = useContext(Theme);
   const current = tabs.find(item => item.key === tab) ?? tabs[0];
-  const sectionSwitch = <Segment options={[{ key: "vocabulary", label: "단어장" }, { key: "bookshelf", label: "책장" }]} value={section} onChange={value => onSectionChange(value as HeaderSection)} />;
+  // Segment aligns itself to the top; the header row centers it vertically.
+  const sectionSwitch = <View style={{ alignSelf: "center", flexShrink: 0 }}><Segment options={[{ key: "vocabulary", label: "단어장" }, { key: "bookshelf", label: "책장" }]} value={section} onChange={value => onSectionChange(value as HeaderSection)} /></View>;
   return <View style={{ flex: 1 }}>
     {desktop ? <View accessibilityRole="header" style={{ height: 56, flexDirection: "row", alignItems: "center", gap: 14, paddingHorizontal: 20, borderBottomWidth: 1, borderColor: c.border, backgroundColor: c.header }}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 9 }}><BrandMark /><T size={15.2} weight="700">Japanese Companion</T></View>

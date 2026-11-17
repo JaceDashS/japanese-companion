@@ -2,7 +2,7 @@ import { ActionDropdown, type DropdownAction } from "./ActionDropdown";
 import { BookSelect } from "./BookSelect";
 import type { HeaderSection } from "./Chrome";
 import { Bookshelf, type ReadingLibraryModel } from "./ReadingLibrary";
-import { IMPORT_PROMPT, readingApi } from "./japaneseWords";
+import { IMPORT_PROMPT, personalBookId, readingApi } from "./japaneseWords";
 import * as Clipboard from "expo-clipboard";
 import React, { useState } from "react";
 import { RefreshControl, ScrollView, View } from "react-native";
@@ -16,7 +16,9 @@ import { PersonalBooks } from "./PersonalBooks";
 /** Today, Day and progress tabs in the former dashboard composition, backed by the shared dashboard builders. */
 export function HomeScreen({ model, library, section, tab, today, desktop, notify }: { desktop: boolean; model: StudyModel; library: ReadingLibraryModel; section: HeaderSection; tab: "today" | "days" | "progress"; today: string; notify: (text: string, tone?: string) => void }) {
   const [refreshing, setRefreshing] = useState(false);
-  const [managing, setManaging] = useState(false);
+  const [managing, setManaging] = useState<false | "list" | "import">(false);
+  // After the prompt is copied the same button becomes word input for the selected vocabulary.
+  const [copied, setCopied] = useState(false);
   const { dashboard: d, srs } = model;
   const phone = !desktop;
   const pending = new Set(model.queue.items.filter((entry: any) => entry.status !== "failed").map((entry: any) => entry.learningPath && toLearningPathKey(entry.learningPath)));
@@ -69,10 +71,12 @@ export function HomeScreen({ model, library, section, tab, today, desktop, notif
     </View>
   </>;
   const vocabActions: DropdownAction[] = [
-    { key: "copy-prompt", title: "프롬프트 복사", onPress: () => { void Clipboard.setStringAsync(IMPORT_PROMPT).then(() => notify("단어장 프롬프트 복사 완료"), error => notify(String(error), "error")); }, testID: "copy-vocab-prompt" },
-    { key: "add-vocab", title: "단어장 추가", onPress: () => setManaging(true), testID: "add-material" },
+    copied
+      ? { key: "input-words", title: "단어 입력", onPress: () => setManaging("import"), testID: "input-vocab-words" }
+      : { key: "copy-prompt", title: "프롬프트 복사", onPress: () => { void Clipboard.setStringAsync(IMPORT_PROMPT).then(() => { setCopied(true); notify("단어장 프롬프트 복사 완료"); }, error => notify(String(error), "error")); }, testID: "copy-vocab-prompt" },
+    { key: "add-vocab", title: "단어장 추가", onPress: () => setManaging("list"), testID: "add-material" },
   ];
-  const vocabSelect = <BookSelect books={model.books} value={model.book} onChange={id => { void model.switchBook(id).catch(error => notify(String(error), "error")); }} />;
+  const vocabSelect = <BookSelect books={model.books} value={model.book} onChange={id => { setCopied(false); void model.switchBook(id).catch(error => notify(String(error), "error")); }} />;
 
   return <>
     <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={phone ? layout.phoneBody : layout.body} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}>
@@ -87,18 +91,16 @@ export function HomeScreen({ model, library, section, tab, today, desktop, notif
                 <ActionDropdown actions={vocabActions} />
               </View>
             ) : (
-              <>
-                {vocabSelect}
-                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-                  {vocabActions.map(item => <Btn key={item.key} title={item.title} onPress={item.onPress} testID={item.testID} />)}
-                </View>
-              </>
+              <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 8 }}>
+                <View style={{ flex: 1, minWidth: 0 }}>{vocabSelect}</View>
+                {vocabActions.map(item => <Btn key={item.key} title={item.title} onPress={item.onPress} testID={item.testID} style={{ minHeight: 44 }} />)}
+              </View>
             )}
           </View>
           {content}
         </>
       )}
     </ScrollView>
-    {managing && <PersonalBooks model={model} notify={notify} onClose={() => setManaging(false)} />}
+    {managing && <PersonalBooks model={model} notify={notify} importBookId={managing === "import" ? personalBookId(model.book) ?? undefined : undefined} onClose={() => { setManaging(false); setCopied(false); }} />}
   </>;
 }
