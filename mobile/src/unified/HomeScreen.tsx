@@ -1,19 +1,22 @@
-import { ReadingLibrary } from "./ReadingLibrary";
-import { readingApi } from "./japaneseWords";
+import { ActionDropdown, type DropdownAction } from "./ActionDropdown";
+import { BookSelect } from "./BookSelect";
+import type { HeaderSection } from "./Chrome";
+import { Bookshelf, type ReadingLibraryModel } from "./ReadingLibrary";
+import { IMPORT_PROMPT, readingApi } from "./japaneseWords";
+import * as Clipboard from "expo-clipboard";
 import React, { useState } from "react";
 import { RefreshControl, ScrollView, View } from "react-native";
 import { toLearningPathKey } from "../../.generated/product/shared/controllers/domain/learningPath.js";
 import { getStageLabel } from "../../.generated/product/shared/domain/constants.js";
 import type { StudyModel } from "./useStudyModel";
-import { Card, layout, T } from "./ui";
+import { Btn, Card, layout, T } from "./ui";
 import { DayCard, DayGrid, ProgressPanel, RecentDays, StageChart, Stats, WordActionCard } from "./Dashboard";
 import { PersonalBooks } from "./PersonalBooks";
 
 /** Today, Day and progress tabs in the former dashboard composition, backed by the shared dashboard builders. */
-export function HomeScreen({ model, tab, today, desktop, notify }: { desktop: boolean; model: StudyModel; tab: "today" | "days" | "progress"; today: string; notify: (text: string, tone?: string) => void }) {
+export function HomeScreen({ model, library, section, tab, today, desktop, notify }: { desktop: boolean; model: StudyModel; library: ReadingLibraryModel; section: HeaderSection; tab: "today" | "days" | "progress"; today: string; notify: (text: string, tone?: string) => void }) {
   const [refreshing, setRefreshing] = useState(false);
   const [managing, setManaging] = useState(false);
-  const [reading, setReading] = useState(false);
   const { dashboard: d, srs } = model;
   const phone = !desktop;
   const pending = new Set(model.queue.items.filter((entry: any) => entry.status !== "failed").map((entry: any) => entry.learningPath && toLearningPathKey(entry.learningPath)));
@@ -33,7 +36,7 @@ export function HomeScreen({ model, tab, today, desktop, notify }: { desktop: bo
   </View>;
   const stageChart = <StageChart stages={Array.from({ length: srs.maxReviewStage }, (_, index) => ({ label: getStageLabel(index + 1, srs.maxReviewStage), count: rows.filter((row: any) => Math.max(1, Math.min(srs.maxReviewStage, Math.round(Number(row.stage) || 1))) === index + 1).length }))} />;
   const progress = <ProgressPanel d={d} srsMax={srs.maxReviewStage} plan={model.plan} onPlan={model.updatePlan} />;
-  const recent = <RecentDays rows={rows} today={today} maxStage={srs.maxReviewStage} onOpen={model.openLearningDay} />;
+  const recent = <RecentDays rows={rows} today={today} maxStage={srs.maxReviewStage} onOpen={model.openLearningDay} opened={model.recentOpened} />;
   const failTotal = rows.reduce((sum: number, row: any) => sum + row.failCount, 0);
   const stats = <Stats phone={phone} items={[
     { accent: "info", label: "오늘 복습", value: `${reviews.length}개`, hint: reviews.length ? `단어 ${reviews.reduce((sum: number, row: any) => sum + row.dueCount, 0)}개` : "예정 없음" },
@@ -65,8 +68,37 @@ export function HomeScreen({ model, tab, today, desktop, notify }: { desktop: bo
       </View>
     </View>
   </>;
+  const vocabActions: DropdownAction[] = [
+    { key: "copy-prompt", title: "프롬프트 복사", onPress: () => { void Clipboard.setStringAsync(IMPORT_PROMPT).then(() => notify("단어장 프롬프트 복사 완료"), error => notify(String(error), "error")); }, testID: "copy-vocab-prompt" },
+    { key: "add-vocab", title: "단어장 추가", onPress: () => setManaging(true), testID: "add-material" },
+  ];
+  const vocabSelect = <BookSelect books={model.books} value={model.book} onChange={id => { void model.switchBook(id).catch(error => notify(String(error), "error")); }} />;
+
   return <>
-    <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={phone ? layout.phoneBody : layout.body} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}><ReadingLibrary api={readingApi} language="ja" onAdd={() => setManaging(true)} catalog={{ books: model.books, value: model.book, onChange: id => { void model.switchBook(id).catch(error => notify(String(error), "error")); }, onReadingChange: setReading }} onChanged={() => { void model.refresh().catch(error => notify(String(error), "error")); }} revision={managing ? 1 : 0} />{!reading && content}</ScrollView>
+    <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={phone ? layout.phoneBody : layout.body} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}>
+      {section === "bookshelf" ? (
+        <Bookshelf library={library} api={readingApi} language="ja" notify={notify} />
+      ) : (
+        <>
+          <View style={{ gap: 12 }}>
+            {phone ? (
+              <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 8 }}>
+                <View style={{ flex: 1, minWidth: 0 }}>{vocabSelect}</View>
+                <ActionDropdown actions={vocabActions} />
+              </View>
+            ) : (
+              <>
+                {vocabSelect}
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                  {vocabActions.map(item => <Btn key={item.key} title={item.title} onPress={item.onPress} testID={item.testID} />)}
+                </View>
+              </>
+            )}
+          </View>
+          {content}
+        </>
+      )}
+    </ScrollView>
     {managing && <PersonalBooks model={model} notify={notify} onClose={() => setManaging(false)} />}
   </>;
 }

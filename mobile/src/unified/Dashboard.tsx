@@ -47,8 +47,9 @@ function useHover() {
   return { hover, bind: { onHoverIn: () => setHover(true), onHoverOut: () => setHover(false) } };
 }
 
-export function RecentDays({ rows, today, maxStage, onOpen }: { rows: any[]; today: string; maxStage: number; onOpen: (path: LearningPath) => void }) {
-  const recent = rows.filter(row => row.lastAttemptDate).sort((a, b) => String(b.lastAttemptDate).localeCompare(String(a.lastAttemptDate))).slice(0, 5);
+export function RecentDays({ rows, today, maxStage, onOpen, opened = [] }: { rows: any[]; today: string; maxStage: number; onOpen: (path: LearningPath) => void; opened?: string[] }) {
+  const rank = (row: any) => { const at = opened.indexOf(toLearningPathKey(row.path)); return at < 0 ? Number.MAX_SAFE_INTEGER : at; };
+  const recent = rows.filter(row => row.lastAttemptDate).sort((a, b) => String(b.lastAttemptDate).localeCompare(String(a.lastAttemptDate)) || rank(a) - rank(b)).slice(0, 5);
   if (!recent.length) return <Empty>아직 학습 기록이 없습니다.</Empty>;
   return <View style={{ gap: 6 }}>{recent.map(row => <RecentRow key={toLearningPathKey(row.path)} row={row} today={today} maxStage={maxStage} onOpen={onOpen} />)}</View>;
 }

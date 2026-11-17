@@ -4,32 +4,36 @@ import { Btn, Empty, fonts, MarkdownBox, Sheet, T, Theme } from "./ui";
 import { relatedMemos, type FuriganaSegment, type MemoEntry } from "./japaneseWords";
 
 /**
- * Problem sentence with readings over its kanji groups. The target keeps its underline; its reading stays
- * hidden until the question is answered, because for a reading problem it is the answer.
+ * Problem sentence with readings over its kanji groups. Readings sit in a reserved row above the text and never
+ * change the sentence width or height, so switching them on or off moves nothing. Any reading that overlaps the
+ * target, or that is the answer, stays hidden until the question is answered.
  */
-export function FuriganaSentence({ segments, target, revealTarget, size }: { segments: FuriganaSegment[]; target: string; revealTarget: boolean; size: number }) {
+export function FuriganaSentence({ segments, target, answer, showReadings, revealTarget, size }: { segments: FuriganaSegment[]; target: string; answer: string; showReadings: boolean; revealTarget: boolean; size: number }) {
   const c = useContext(Theme);
   const sentence = segments.map((segment) => segment.text).join("");
   const start = target ? sentence.indexOf(target) : -1;
   const end = start < 0 ? -1 : start + target.length;
-  const cells: Array<{ text: string; reading: string; inTarget: boolean }> = [];
+  const cells: Array<{ text: string; reading: string; inTarget: boolean; hidden: boolean }> = [];
   let offset = 0;
   for (const segment of segments) {
     const segmentStart = offset;
     offset += segment.text.length;
     if (segment.reading) {
-      cells.push({ text: segment.text, reading: segment.reading, inTarget: start >= 0 && segmentStart >= start && offset <= end });
+      const inTarget = start >= 0 && segmentStart < end && offset > start;
+      const revealsAnswer = !!answer && (segment.reading === answer || answer.includes(segment.reading) || (start < 0 && !!target && target.includes(segment.text)));
+      cells.push({ text: segment.text, reading: segment.reading, inTarget, hidden: inTarget || revealsAnswer });
       continue;
     }
     // Plain text is laid out per character so long kana runs still wrap.
     [...segment.text].forEach((char, index) => {
       const position = segmentStart + index;
-      cells.push({ text: char, reading: "", inTarget: start >= 0 && position >= start && position < end });
+      cells.push({ text: char, reading: "", inTarget: start >= 0 && position >= start && position < end, hidden: false });
     });
   }
+  const rubySize = size * 0.45;
   return <View accessibilityLabel={sentence} style={{ paddingVertical: 20, paddingHorizontal: 18, borderWidth: 1, borderColor: c.border, borderRadius: 16, backgroundColor: c.panel, flexDirection: "row", flexWrap: "wrap", alignItems: "flex-end" }}>
-    {cells.map((cell, index) => <View key={index} style={{ alignItems: "center" }}>
-      <Text style={{ fontSize: size * 0.45, lineHeight: size * 0.62, color: c.accent, opacity: cell.reading && (!cell.inTarget || revealTarget) ? 1 : 0, fontFamily: fonts.sans }}>{cell.reading || " "}</Text>
+    {cells.map((cell, index) => <View key={index} style={{ paddingTop: rubySize * 1.35 }}>
+      {!!cell.reading && <Text numberOfLines={1} style={{ position: "absolute", top: 0, left: -size, right: -size, textAlign: "center", fontSize: rubySize, lineHeight: rubySize * 1.35, color: c.accent, opacity: showReadings && (!cell.hidden || revealTarget) ? 1 : 0, fontFamily: fonts.sans }}>{cell.reading}</Text>}
       <Text selectable style={[{ fontSize: size, lineHeight: size * 1.45, color: cell.inTarget ? c.accent : c.text, fontFamily: fonts.serif }, cell.inTarget ? { textDecorationLine: "underline", textDecorationColor: c.accentLine } : null]}>{cell.text}</Text>
     </View>)}
   </View>;

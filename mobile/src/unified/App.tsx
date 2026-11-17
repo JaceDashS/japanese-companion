@@ -17,10 +17,12 @@ import { Notices } from "./Notices";
 import * as storage from "./storage";
 import { useHomeFocus } from "./useHomeFocus";
 import { SITE_ORIGIN } from "./config";
-import { Chrome } from "./Chrome";
+import { Chrome, type HeaderSection } from "./Chrome";
 import { useMainReturn } from "../useMainReturn";
 import { isDesktopLayout } from "./responsive";
 import { BrowserTheme } from "./BrowserTheme";
+import { ReaderScreen, useReadingLibrary } from "./ReadingLibrary";
+import { readingApi } from "./japaneseWords";
 type Gate = { kind: "checking" } | { kind: "login" } | { kind: "password" } | { kind: "blocked" } | { kind: "ready"; user: User; boot: BootData };
 
 /** Common Expo root; each account gets a new study screen lifecycle. */
@@ -63,6 +65,7 @@ export default function App() {
 }
 
 function StudyApp({ boot, user, onLogout, onReset }: { boot: BootData; user: User; onLogout: () => Promise<void>; onReset: () => void }) {
+  const [section, setSection] = useState<HeaderSection>("vocabulary");
   const [tab, setTab] = useState<"today" | "days" | "progress" | "settings">("today");
   const [today, setToday] = useState(getTodayString);
   const [display, updateDisplay] = useState<Display>({ theme: "dark", device: "auto" });
@@ -70,6 +73,7 @@ function StudyApp({ boot, user, onLogout, onReset }: { boot: BootData; user: Use
   const { width, height } = useWindowDimensions();
   const notify = useCallback((text: string, tone?: string) => setToast({ text, tone }), []);
   const model = useStudyModel(boot, today, notify);
+  const library = useReadingLibrary(readingApi, notify);
   useHomeFocus(!model.session, model.refresh, (error) => notify(String(error), "error"));
   const isPhone = !isDesktopLayout(width, height, display.device);
   const c = palettes[display.theme];
@@ -86,15 +90,15 @@ function StudyApp({ boot, user, onLogout, onReset }: { boot: BootData; user: Use
   const setDisplay = (next: Display) => { updateDisplay(next); void storage.write("jpc-theme-v1", next.theme).catch(() => undefined); void storage.write("jpc-device-mode-v1", next.device).catch(() => undefined); };
   const dueCount = model.dashboard.reviewDue.length;
   useMainReturn({
-    active: !model.session && tab !== "today",
+    active: !model.session && !library.openId && tab !== "today",
     dirty: false,
     subPath: tab !== "today" ? tab : undefined,
     onReturn: () => setTab("today"),
   });
   return <Theme.Provider value={c}><Device.Provider value={{ phone: isPhone }}><View style={[{ flex: 1, backgroundColor: c.bg }, gradient(`radial-gradient(900px 480px at 85% -10%, ${c.glow}, transparent 70%)`)]}><BrowserTheme scheme={display.theme} /><StatusBar style={display.theme === "light" ? "dark" : "light"} /><Notices />
-    {model.session ? <SessionScreen key={model.session.unitId + ":" + model.session.dayId} model={model} isPhone={isPhone} notify={notify} /> : <>
-      <Chrome desktop={!isPhone} tab={tab} today={today} dueCount={dueCount} onNavigate={setTab}>
-        {tab === "settings" ? <SettingsScreen phone={isPhone} model={model} display={display} setDisplay={setDisplay} notify={notify} onLogout={onLogout} onReset={onReset} /> : <HomeScreen model={model} tab={tab} today={today} desktop={!isPhone} notify={notify} />}
+    {model.session ? <SessionScreen key={model.session.unitId + ":" + model.session.dayId} model={model} isPhone={isPhone} notify={notify} /> : library.openId ? <ReaderScreen library={library} api={readingApi} language="ja" notify={notify} /> : <>
+      <Chrome desktop={!isPhone} section={section} onSectionChange={(next) => { setSection(next); if (tab === "settings") setTab("today"); }} tab={tab} today={today} dueCount={dueCount} onNavigate={setTab}>
+        {tab === "settings" ? <SettingsScreen phone={isPhone} model={model} display={display} setDisplay={setDisplay} notify={notify} onLogout={onLogout} onReset={onReset} /> : <HomeScreen model={model} library={library} section={section} tab={tab} today={today} desktop={!isPhone} notify={notify} />}
       </Chrome>
     </>}
     {toast && <Toast text={toast.text} tone={toast.tone} phone={isPhone && !model.session} />}

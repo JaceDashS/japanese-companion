@@ -124,7 +124,7 @@ export function Field({
 }
 export function Busy() {
   return (
-    <View style={styles.body}>
+    <View style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 12, padding: 24 }}>
       <ActivityIndicator color={colors.accent} size="large" />
       <Text style={styles.muted}>불러오는 중…</Text>
     </View>

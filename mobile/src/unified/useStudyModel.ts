@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { toLearningPathKey } from "../../.generated/product/shared/controllers/domain/learningPath.js";
 import type { StudyState, SessionView, StudyItem, LearningPath } from "../../../shared/domain/studyTypes";
 import { buildAppState, listAvailableBooks, loadCurriculumFiles } from "../../.generated/product/shared/controllers/domain/curriculumFiles.js";
 import { useHomeDashboardData } from "../../.generated/product/shared/controllers/domain/homeDashboard.js";
@@ -126,7 +127,10 @@ export function useStudyModel(initial: BootData, today: string, notify: (text: s
     persistSourceDayResult: persistence.persistSourceDayResult, goHome,
   });
   const input = createQuizInputActions({ currentItem, goNextQuizItem: controller.goNextQuizItem, normalizeProblem, session, setSession, updateLastResultNow: progress.updateLastResultNow });
-  const openers = createSessionOpeners({ getPathDay, isQuizTarget, markDayAttemptNow: progress.markDayAttemptNow, setSession, shuffleArray, stateCurriculum: state.curriculum });
+  // Attempt dates are days; the order of Days opened in this session breaks same-day ties in recent study.
+  const [recentOpened, setRecentOpened] = useState<string[]>([]);
+  const markDayAttemptNow = (path: LearningPath) => { setRecentOpened(previous => [toLearningPathKey(path), ...previous.filter(key => key !== toLearningPathKey(path))].slice(0, 50)); progress.markDayAttemptNow(path); };
+  const openers = createSessionOpeners({ getPathDay, isQuizTarget, markDayAttemptNow, setSession, shuffleArray, stateCurriculum: state.curriculum });
   useEffect(() => { setEditor({ open: false, draft: createProblemDraft(currentItem?.problem), error: "" }); }, [currentItem?.id]);
   useEffect(() => {
     if (!session || session.phase !== "quiz" || !currentItem || session.choiceOrders?.[currentItem.id]) return;
@@ -137,7 +141,7 @@ export function useStudyModel(initial: BootData, today: string, notify: (text: s
   return {
     state, files, book, books: listAvailableBooks(files), session, setSession, editor, setEditor,
     srs, plan, dashboard, queue, currentItem: currentItem as StudyItem | null, sessionDay, sessionItems,
-    ...controller, ...input, ...openers, ...progress, updateMemo, memos, reloadBooks, getDisplayItemId: displayItemId, goHome, refresh,
+    ...controller, ...input, ...progress, ...openers, markDayAttemptNow, recentOpened, updateMemo, memos, reloadBooks, getDisplayItemId: displayItemId, goHome, refresh,
     async switchBook(next: string) {
       if (next === book) return;
       await waitForSaves();

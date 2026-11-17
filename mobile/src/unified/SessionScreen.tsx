@@ -148,8 +148,8 @@ export function SessionScreen({ model, isPhone, notify }: { model: StudyModel; i
         <View style={{ flex: 1 }} />
         {furigana && <Switch on={sentenceReading} onToggle={() => setSentenceReading(!sentenceReading)} label="후리가나" />}
       </View>
-      {furigana && sentenceReading
-        ? <FuriganaSentence segments={furigana} target={problem?.target ?? ""} revealTarget={Boolean(verdict)} size={sentenceSize} />
+      {furigana
+        ? <FuriganaSentence segments={furigana} target={problem?.target ?? ""} answer={problem?.answer ?? ""} showReadings={sentenceReading} revealTarget={Boolean(verdict)} size={sentenceSize} />
         : <Sentence text={problem?.sentence || `${item.expression ?? ""} (${item.reading ?? ""})`} target={problem?.target ?? ""} size={sentenceSize} />}
       {problem?.choices.length ? <>
         <QuizMemo key={item.id} />
