@@ -118,18 +118,20 @@ export function useStudyModel(initial: BootData, today: string, notify: (text: s
     });
   };
   const goHome = () => { setSession(null); };
+  // Attempt dates are days; the order in which Days were opened, answered or graded here breaks same-day ties in recent study.
+  const [recentOpened, setRecentOpened] = useState<string[]>([]);
+  const touchRecent = (path: LearningPath) => setRecentOpened(previous => [toLearningPathKey(path), ...previous.filter(key => key !== toLearningPathKey(path))].slice(0, 50));
+  const markDayAttemptNow = (path: LearningPath) => { touchRecent(path); progress.markDayAttemptNow(path); };
+  const updateLastResultNow: typeof progress.updateLastResultNow = (...args) => { if (session) touchRecent({ unitId: session.unitId, dayId: session.dayId }); return progress.updateLastResultNow(...args); };
   const controller = createSessionController({
     session, sessionItems, currentItem, problemEditor: editor, setProblemEditor: setEditor,
-    setSession, setState, stateCurriculum: state.curriculum, today, ...progress,
+    setSession, setState, stateCurriculum: state.curriculum, today, ...progress, markDayAttemptNow,
     normalizeProblem, createProblemDraft, buildProblemPayload, getPathDay, replaceDay,
     applyReviewResultForDay: (day: any, date: string, results: any) => applyReviewResultForDay(day, date, results, srs),
     applyQuizResultForDay: (day: any, date: string, results: any) => applyQuizResultForDay(day, date, results, srs),
     persistSourceDayResult: persistence.persistSourceDayResult, goHome,
   });
-  const input = createQuizInputActions({ currentItem, goNextQuizItem: controller.goNextQuizItem, normalizeProblem, session, setSession, updateLastResultNow: progress.updateLastResultNow });
-  // Attempt dates are days; the order of Days opened in this session breaks same-day ties in recent study.
-  const [recentOpened, setRecentOpened] = useState<string[]>([]);
-  const markDayAttemptNow = (path: LearningPath) => { setRecentOpened(previous => [toLearningPathKey(path), ...previous.filter(key => key !== toLearningPathKey(path))].slice(0, 50)); progress.markDayAttemptNow(path); };
+  const input = createQuizInputActions({ currentItem, goNextQuizItem: controller.goNextQuizItem, normalizeProblem, session, setSession, updateLastResultNow });
   const openers = createSessionOpeners({ getPathDay, isQuizTarget, markDayAttemptNow, setSession, shuffleArray, stateCurriculum: state.curriculum });
   useEffect(() => { setEditor({ open: false, draft: createProblemDraft(currentItem?.problem), error: "" }); }, [currentItem?.id]);
   useEffect(() => {
@@ -141,7 +143,7 @@ export function useStudyModel(initial: BootData, today: string, notify: (text: s
   return {
     state, files, book, books: listAvailableBooks(files), session, setSession, editor, setEditor,
     srs, plan, dashboard, queue, currentItem: currentItem as StudyItem | null, sessionDay, sessionItems,
-    ...controller, ...input, ...progress, ...openers, markDayAttemptNow, recentOpened, updateMemo, memos, reloadBooks, getDisplayItemId: displayItemId, goHome, refresh,
+    ...controller, ...input, ...progress, ...openers, markDayAttemptNow, updateLastResultNow, recentOpened, updateMemo, memos, reloadBooks, getDisplayItemId: displayItemId, goHome, refresh,
     async switchBook(next: string) {
       if (next === book) return;
       await waitForSaves();
