@@ -10,6 +10,8 @@ export type RawDayBlock = {
   stageCompleteDate: string | null;
   nextReviewDate: string | null;
   lastAttemptDate: string;
+  /** ISO time of the latest attempt; orders Days attempted on the same date. */
+  lastAttemptAt: string;
   lastCompletedDate: string;
   items: RawRecord[];
 };
@@ -55,6 +57,7 @@ export function extractDayBlocks(unitGroup: RawRecord | null): RawDayBlock[] {
         stageCompleteDate: getDayStageCompleteDateFromRaw(day),
         nextReviewDate: getDayNextReviewDateFromRaw(day),
         lastAttemptDate: getDayLastAttemptDateFromRaw(day),
+        lastAttemptAt: typeof day?.lastAttemptAt === "string" ? day.lastAttemptAt : "",
         lastCompletedDate: getDayLastCompletedDateFromRaw(day),
         items: getRawItems(day),
       };

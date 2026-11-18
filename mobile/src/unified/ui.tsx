@@ -25,7 +25,9 @@ export const palettes = { dark, light };
 export const Device = createContext({ phone: true });
 
 export const fonts = {
-  sans: Platform.select({ web: "Pretendard, \"Hiragino Sans\", \"Yu Gothic\", \"Malgun Gothic\", system-ui, sans-serif", default: undefined }),
+  // Same leading fonts as English Companion, so text sits at the same height in the same containers; Japanese-only
+  // families come after them and are used only for glyphs the earlier fonts lack.
+  sans: Platform.select({ web: "Pretendard, \"Segoe UI Variable\", \"Malgun Gothic\", system-ui, \"Hiragino Sans\", \"Yu Gothic\", sans-serif", default: undefined }),
   serif: Platform.select({ web: "\"Shippori Mincho\", \"Yu Mincho\", \"Nanum Myeongjo\", serif", default: "serif" }),
   mono: Platform.select({ web: "\"JetBrains Mono\", \"Cascadia Mono\", ui-monospace, monospace", default: "monospace" }),
 };

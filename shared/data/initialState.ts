@@ -91,6 +91,7 @@ function buildCurriculumFromAssets(bookId?: string, files?: Record<string, unkno
           ? dayBlock.nextReviewDate
           : null,
         lastAttemptDate: dayBlock.lastAttemptDate ?? "",
+        lastAttemptAt: dayBlock.lastAttemptAt ?? "",
         lastCompletedDate: dayBlock.lastCompletedDate ?? "",
         items: dayBlock.items.map((item, itemIndex) =>
           createExpressionItem(

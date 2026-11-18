@@ -1,7 +1,10 @@
 import React, { useContext, useMemo, useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Platform, Pressable, Text, View, type TextStyle } from "react-native";
 import { Btn, Empty, fonts, MarkdownBox, Sheet, T, Theme } from "./ui";
 import { relatedMemos, type FuriganaSegment, type MemoEntry } from "./japaneseWords";
+
+/** Lets the reading box keep its full width (word plus a margin on each side) so the reading centers on the word. */
+const RUBY_WIDTH = (Platform.OS === "web" ? { maxWidth: "none" } : {}) as TextStyle;
 
 /**
  * Problem sentence with readings over its kanji groups. Readings sit in a reserved row above the text and never
@@ -33,7 +36,8 @@ export function FuriganaSentence({ segments, target, answer, showReadings, revea
   const rubySize = size * 0.45;
   return <View accessibilityLabel={sentence} style={{ paddingVertical: 20, paddingHorizontal: 18, borderWidth: 1, borderColor: c.border, borderRadius: 16, backgroundColor: c.panel, flexDirection: "row", flexWrap: "wrap", alignItems: "flex-end" }}>
     {cells.map((cell, index) => <View key={index} style={{ paddingTop: rubySize * 1.35 }}>
-      {!!cell.reading && <Text numberOfLines={1} style={{ position: "absolute", top: 0, left: -size, right: -size, textAlign: "center", fontSize: rubySize, lineHeight: rubySize * 1.35, color: c.accent, opacity: showReadings && (!cell.hidden || revealTarget) ? 1 : 0, fontFamily: fonts.sans }}>{cell.reading}</Text>}
+      {/* numberOfLines adds max-width: 100% on web, which shrinks the box to the word and centers the reading on its left edge. */}
+      {!!cell.reading && <Text numberOfLines={1} style={{ ...RUBY_WIDTH, position: "absolute", top: 0, left: -size, right: -size, textAlign: "center", fontSize: rubySize, lineHeight: rubySize * 1.35, color: c.accent, opacity: showReadings && (!cell.hidden || revealTarget) ? 1 : 0, fontFamily: fonts.sans }}>{cell.reading}</Text>}
       <Text selectable style={[{ fontSize: size, lineHeight: size * 1.45, color: cell.inTarget ? c.accent : c.text, fontFamily: fonts.serif }, cell.inTarget ? { textDecorationLine: "underline", textDecorationColor: c.accentLine } : null]}>{cell.text}</Text>
     </View>)}
   </View>;

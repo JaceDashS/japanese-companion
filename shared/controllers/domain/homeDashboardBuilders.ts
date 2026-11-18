@@ -311,6 +311,7 @@ export function buildAllDayRows(curriculum: StudyUnit[]) {
       itemCount: day?.items?.length ?? 0,
       stage: day ? getDayStage(day) : 1,
       lastAttemptDate: day ? getDayLastAttemptDate(day) : "",
+      lastAttemptAt: String(day?.lastAttemptAt ?? ""),
       nextReviewDate: day ? getDayNextReviewDate(day) : null,
     };
   });
