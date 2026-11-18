@@ -12,7 +12,18 @@ const tabs = [
 ] as const;
 
 function BrandMark() {
-  return <Image source={require("../../assets/icon.png")} accessibilityLabel="Japanese Companion" resizeMode="contain" style={{ width: 30, height: 30, borderRadius: 9, flexShrink: 0 }} />;
+  return <Image source={require("../../assets/icon.png")} accessible={false} resizeMode="contain" style={{ width: 30, height: 30, borderRadius: 9, flexShrink: 0 }} />;
+}
+
+/** App icon and name; pressing either returns to the home screen (today's study). */
+function Brand({ phone, today, onHome }: { phone: boolean; today?: string; onHome: () => void }) {
+  return <Pressable accessibilityRole="link" accessibilityLabel="Japanese Companion 홈" onPress={onHome} testID="brand-home" style={{ flexDirection: "row", alignItems: "center", gap: phone ? 10 : 9, minWidth: 0, flexShrink: 1 }}>
+    <BrandMark />
+    <View style={{ minWidth: 0, flexShrink: 1 }}>
+      <T size={phone ? 16 : 15.2} weight="700" numberOfLines={1}>Japanese Companion</T>
+      {!!today && <T size={11.5} tone="dim">{today}</T>}
+    </View>
+  </Pressable>;
 }
 
 function TopTab({ title, active, onPress }: { title: string; active: boolean; onPress: () => void }) {
@@ -25,24 +36,22 @@ function TopTab({ title, active, onPress }: { title: string; active: boolean; on
 }
 
 /** PC top bar with the due count, phone header with bottom tab bar and due badge, as in the former shell. */
-export function Chrome({ desktop, section, onSectionChange, tab, today, dueCount, onNavigate, children }: {
-  desktop: boolean; section: HeaderSection; onSectionChange: (section: HeaderSection) => void; tab: Tab; today: string; dueCount: number; onNavigate: (tab: Tab) => void; children: React.ReactNode;
+export function Chrome({ desktop, section, onSectionChange, tab, today, dueCount, onNavigate, onHome, children }: {
+  desktop: boolean; section: HeaderSection; onSectionChange: (section: HeaderSection) => void; tab: Tab; today: string; dueCount: number; onNavigate: (tab: Tab) => void; onHome: () => void; children: React.ReactNode;
 }) {
   const c = useContext(Theme);
-  const current = tabs.find(item => item.key === tab) ?? tabs[0];
   // Segment aligns itself to the top; the header row centers it vertically.
   const sectionSwitch = <View style={{ alignSelf: "center", flexShrink: 0 }}><Segment options={[{ key: "vocabulary", label: "단어장" }, { key: "bookshelf", label: "책장" }]} value={section} onChange={value => onSectionChange(value as HeaderSection)} /></View>;
   return <View style={{ flex: 1 }}>
     {desktop ? <View accessibilityRole="header" style={{ height: 56, flexDirection: "row", alignItems: "center", gap: 14, paddingHorizontal: 20, borderBottomWidth: 1, borderColor: c.border, backgroundColor: c.header }}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 9 }}><BrandMark /><T size={15.2} weight="700">Japanese Companion</T></View>
+      <Brand phone={false} onHome={onHome} />
       {sectionSwitch}
       <View accessibilityRole="tablist" style={{ flexDirection: "row", gap: 2 }}>
         {tabs.map(item => <TopTab key={item.key} active={section === "vocabulary" ? tab === item.key : item.key === "settings" && tab === "settings"} onPress={() => { if (item.key !== "settings") onSectionChange("vocabulary"); onNavigate(item.key); }} title={item.title + (item.key === "today" && dueCount > 0 ? ` · ${dueCount}` : "")} />)}
       </View>
       <T size={12.2} tone="dim" style={{ marginLeft: "auto" }}>{today}</T>
     </View> : <View accessibilityRole="header" style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 12, paddingHorizontal: 16, borderBottomWidth: 1, borderColor: c.borderSoft, backgroundColor: c.bg }}>
-      <BrandMark />
-      <View style={{ minWidth: 0, flex: 1 }}><T size={16} weight="700" numberOfLines={1}>{section === "bookshelf" && tab !== "settings" ? "책장" : current.heading}</T><T size={11.5} tone="dim">{today}</T></View>
+      <View style={{ minWidth: 0, flex: 1, flexDirection: "row" }}><Brand phone today={today} onHome={onHome} /></View>
       {sectionSwitch}
     </View>}
     <View style={{ flex: 1, minHeight: 0 }}>{children}</View>

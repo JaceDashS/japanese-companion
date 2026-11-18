@@ -10,7 +10,7 @@ import * as Clipboard from "expo-clipboard";
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Platform, Pressable, ScrollView, View } from "react-native";
 import { Btn, Card, Device, Empty, Input, Segment, Sheet, T, Theme, fonts } from "./ui";
-import { EMPTY_READING, proseTokens, type LibraryApi, type LibraryBook, type ReadingState, type WordDetail } from "./readingWords";
+import { EMPTY_READING, proseTokens, wordKey, type LibraryApi, type LibraryBook, type ReadingSection, type ReadingState, type WordDetail } from "./readingWords";
 
 type Notify = (text: string, tone?: string) => void;
 type Language = "ja" | "en";
@@ -27,10 +27,16 @@ export function Loading({ text = "불러오는 중…" }: { text?: string }) {
   </View>;
 }
 
-/** Account books, reader state and the open book. Position and bookmarks follow the account across devices. */
+/**
+ * Account books, reader state and the open book. Position, bookmarks, the header section and the open book follow the
+ * account across devices, and the details of every selectable word arrive with the books.
+ */
 export function useReadingLibrary(api: LibraryApi, notify: Notify, enabled = true) {
   const [books, setBooks] = useState<LibraryBook[] | null>(null);
   const [reading, setReading] = useState<ReadingState>(EMPTY_READING);
+  const [wordDetails, setWordDetails] = useState<Record<string, WordDetail>>({});
+  // The first load reopens the book the account left open; later reloads never move the reader.
+  const restored = useRef(false);
   const [usedExamples, setUsedExamples] = useState<Record<string, string[]>>({});
   const [error, setError] = useState("");
   const [openId, setOpenId] = useState<string | null>(null);
@@ -39,11 +45,17 @@ export function useReadingLibrary(api: LibraryApi, notify: Notify, enabled = tru
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const load = useCallback(async () => {
     try {
-      const data = await api<{ books: LibraryBook[]; reading?: ReadingState; usedExamples?: Record<string, string[]> }>("library");
+      const data = await api<{ books: LibraryBook[]; reading?: ReadingState; usedExamples?: Record<string, string[]>; wordDetails?: Record<string, WordDetail> }>("library");
+      if (!restored.current) {
+        restored.current = true;
+        const open = data.reading?.openBookId;
+        if (open && data.books.some(book => book.id === open && book.kind === "book")) setOpenId(open);
+      }
+      setWordDetails(data.wordDetails ?? {});
       setBooks(data.books); setUsedExamples(data.usedExamples ?? {}); setReading(() => ({ ...(data.reading ?? EMPTY_READING), books: { ...(data.reading?.books ?? {}), ...Object.fromEntries(pending.current) } })); setError("");
     } catch (cause) { setError(errorText(cause, "책을 불러오지 못했습니다.")); }
   }, [api]);
-  useEffect(() => { if (enabled) void load(); else { setBooks(null); setReading(EMPTY_READING); setOpenId(null); } }, [load, enabled]);
+  useEffect(() => { if (enabled) void load(); else { restored.current = false; setBooks(null); setReading(EMPTY_READING); setWordDetails({}); setOpenId(null); } }, [load, enabled]);
   useEffect(() => { void storage.readAsync(SPREAD_KEY).then(value => { if (value === "2") setSpreadValue(2); }).catch(() => undefined); }, []);
   const send = useCallback((patch: Record<string, unknown>) => { void api("library/state", patch).catch(cause => notify(errorText(cause, "읽은 위치를 저장하지 못했습니다."), "error")); }, [api, notify]);
   const flush = useCallback(() => {
@@ -54,8 +66,16 @@ export function useReadingLibrary(api: LibraryApi, notify: Notify, enabled = tru
   useEffect(() => flush, [flush]);
   return {
     books, reading, usedExamples, error, openId, spread, reload: load,
-    open(id: string) { setOpenId(id); setReading(previous => ({ ...previous, lastBookId: id })); send({ lastBookId: id }); },
-    close() { flush(); setOpenId(null); },
+    /** False until the first load answers, so the app can wait before choosing the section to start in. */
+    loaded: books !== null || !!error,
+    open(id: string) { setOpenId(id); setReading(previous => ({ ...previous, lastBookId: id, openBookId: id })); send({ lastBookId: id, openBookId: id }); },
+    close() { flush(); setOpenId(null); setReading(previous => ({ ...previous, openBookId: "" })); send({ openBookId: "" }); },
+    /** Remember the header section, so the next visit starts in the bookshelf when it was left there. */
+    setSection(section: ReadingSection) { if ((reading.section ?? "vocabulary") === section) return; setReading(previous => ({ ...previous, section })); send({ section }); },
+    /** Details of a selectable word, already loaded with the books. */
+    wordDetail(language: Language, word: string): WordDetail | undefined { return wordDetails[wordKey(language, word)]; },
+    /** Keep the loaded details in step after a note is saved, so reopening the word shows it. */
+    rememberNote(language: Language, word: string, note: string) { const key = wordKey(language, word); setWordDetails(previous => previous[key] ? { ...previous, [key]: { ...previous[key], note } } : previous); },
     position(id: string) { return reading.books[id] ?? { offset: 0, bookmarks: [] }; },
     /** Local state changes at once; the server write waits briefly so fast page turns send one request. */
     setPosition(id: string, offset: number, bookmarks: number[]) {
@@ -188,7 +208,7 @@ export function ReaderScreen({ library, api, language, notify }: { library: Read
         <T weight="700">{page + 1}페이지</T><T size={12.5} tone="muted" numberOfLines={2}>{pages[page]?.tokens.map(token => token.text).join("").trim()}</T>
       </Pressable>; })}
     </Sheet>}
-    {word && <WordLookup key={word} api={api} word={word} language={language} onClose={() => setWord(null)} />}
+    {word && <WordLookup key={word} api={api} word={word} language={language} initial={library.wordDetail(language, word)} onNoteSaved={note => library.rememberNote(language, word, note)} onClose={() => setWord(null)} />}
     {editing && book && <MaterialEditor api={api} book={book} onClose={() => setEditing(false)} onSaved={saved => { setEditing(false); library.replaceBook(saved); }} />}
     {importing && book && <BookImporter api={api} language={language} books={books} targetId={book.id} notify={notify} onClose={() => setImporting(false)} onSaved={library.replaceBook} />}
   </View>;
@@ -233,41 +253,44 @@ export function BookImporter({ api, language, books, targetId, notify, onClose, 
   </Sheet>;
 }
 
-/** One registered word in the order furigana, meaning, personal note, decomposition. The note is shared by every material. */
-export function WordLookup({ api, word, language, onClose }: { api: LibraryApi; word: string; language: Language; onClose: () => void }) {
-  const [detail, setDetail] = useState<WordDetail | null | undefined>(undefined);
-  const [note, setNote] = useState("");
+/**
+ * One registered word in the order furigana, meaning, personal note, decomposition. The note is shared by every material.
+ * A word from a book opens at once from the details loaded with it; elsewhere it is fetched. A changed note saves itself
+ * when the field loses focus or the sheet closes, as in word study.
+ */
+export function WordLookup({ api, word, language, initial, onNoteSaved, onClose }: { api: LibraryApi; word: string; language: Language; initial?: WordDetail; onNoteSaved?: (note: string) => void; onClose: () => void }) {
+  const [detail, setDetail] = useState<WordDetail | null | undefined>(initial);
+  const [note, setNote] = useState(initial?.note ?? "");
   const [error, setError] = useState("");
-  const [saved, setSaved] = useState(false);
-  const [busy, setBusy] = useState(false);
+  const [status, setStatus] = useState<"idle" | "saving" | "saved">("idle");
   const [retry, setRetry] = useState(0);
   const mounted = useRef(true);
+  // The note as last stored on the server (null after a failed save); a save is sent only when the field differs.
+  const stored = useRef<string | null>(initial?.note ?? "");
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   useEffect(() => {
+    if (initial) return;
     let active = true;
-    setDetail(undefined); setError(""); setSaved(false);
-    api<{ detail: WordDetail | null }>("word", undefined, { word }).then(result => { if (active) { setDetail(result.detail); setNote(result.detail?.note ?? ""); } }, cause => { if (active) setError(errorText(cause, "조회하지 못했습니다.")); });
+    setDetail(undefined); setError("");
+    api<{ detail: WordDetail | null }>("word", undefined, { word }).then(result => { if (active) { setDetail(result.detail); setNote(result.detail?.note ?? ""); stored.current = result.detail?.note ?? ""; } }, cause => { if (active) setError(errorText(cause, "조회하지 못했습니다.")); });
     return () => { active = false; };
   }, [api, word, retry]);
-  const save = async () => {
-    if (!detail || busy) return;
-    setBusy(true); setError(""); setSaved(false);
-    try { await api("word-note", { word: detail.word, note }); if (mounted.current) setSaved(true); }
-    catch (cause) { if (mounted.current) setError(errorText(cause, "메모를 저장하지 못했습니다.")); }
-    finally { if (mounted.current) setBusy(false); }
+  const save = () => {
+    if (!detail || note === stored.current) return;
+    const value = note;
+    stored.current = value;
+    setStatus("saving"); setError("");
+    void api("word-note", { word: detail.word, note: value }).then(() => { onNoteSaved?.(value); if (mounted.current) setStatus("saved"); }, cause => { stored.current = null; if (mounted.current) { setStatus("idle"); setError(errorText(cause, "메모를 저장하지 못했습니다.")); } });
   };
-  return <Sheet title={word} onClose={onClose}>
+  return <Sheet title={word} onClose={() => { save(); onClose(); }}>
     {detail === undefined && !error && <Loading text="단어를 찾는 중…" />}
     {detail === null && <T>등록된 단어가 없습니다.</T>}
     {!!error && <><T tone="error">{error}</T>{detail === undefined && <Btn title="다시 조회" onPress={() => setRetry(value => value + 1)} />}</>}
     {detail && <>
       {language === "ja" && <><T tone="dim" size={12}>후리가나</T><T size={18}>{detail.reading || "-"}</T></>}
       <T tone="dim" size={12}>뜻</T><T>{detail.meaning || "등록된 뜻이 없습니다."}</T>
-      <Input multiline label="내 메모" value={note} onChangeText={value => { setNote(value); setSaved(false); }} placeholder="이 단어의 메모" />
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-        <Btn title={busy ? "저장 중…" : "메모 저장"} disabled={busy} onPress={() => void save()} />
-        <T size={12} tone="dim" style={{ flex: 1 }}>{saved ? "저장했습니다." : "같은 단어의 메모는 모든 단어장과 책에서 함께 바뀝니다."}</T>
-      </View>
+      <Input multiline label="내 메모" value={note} onChangeText={value => { setNote(value); setStatus("idle"); }} onBlur={save} placeholder="이 단어의 메모" testID="reader-word-note" />
+      <T size={12} tone="dim">{status === "saving" ? "저장 중…" : status === "saved" ? "저장했습니다." : "바꾸면 자동으로 저장됩니다. 같은 단어의 메모는 모든 단어장과 책에서 함께 바뀝니다."}</T>
       <T tone="dim" size={12}>{language === "ja" ? "한자 디컴포지션" : "제공 예문"}</T>
       {detail.studyNote.trim() ? <StudyMarkdown text={detail.studyNote} client={client} /> : <T tone="muted">없음</T>}
     </>}

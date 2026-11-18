@@ -75,6 +75,15 @@ function StudyApp({ boot, user, onLogout, onReset }: { boot: BootData; user: Use
   const model = useStudyModel(boot, today, notify);
   const library = useReadingLibrary(readingApi, notify);
   useHomeFocus(!model.session, model.refresh, (error) => notify(String(error), "error"));
+  // The account's last section opens again: a visit that ended in the bookshelf starts there.
+  const sectionRestored = useRef(false);
+  useEffect(() => {
+    if (sectionRestored.current || !library.loaded) return;
+    sectionRestored.current = true;
+    if (library.reading.section === "bookshelf") setSection("bookshelf");
+  }, [library.loaded, library.reading.section]);
+  const changeSection = (next: HeaderSection) => { setSection(next); library.setSection(next); };
+  const goHome = () => { changeSection("vocabulary"); setTab("today"); };
   const isPhone = !isDesktopLayout(width, height, display.device);
   const c = palettes[display.theme];
   useEffect(() => { void Promise.all([storage.readAsync("jpc-theme-v1"), storage.readAsync("jpc-device-mode-v1")]).then(([theme, device]) => updateDisplay({ theme: theme === "light" || theme === "washi" ? "light" : "dark", device: device === "phone" || device === "pc" ? device : "auto" })); }, []);
@@ -97,7 +106,7 @@ function StudyApp({ boot, user, onLogout, onReset }: { boot: BootData; user: Use
   });
   return <Theme.Provider value={c}><Device.Provider value={{ phone: isPhone }}><View style={[{ flex: 1, backgroundColor: c.bg }, gradient(`radial-gradient(900px 480px at 85% -10%, ${c.glow}, transparent 70%)`)]}><BrowserTheme scheme={display.theme} /><StatusBar style={display.theme === "light" ? "dark" : "light"} /><Notices />
     {model.session ? <SessionScreen key={model.session.unitId + ":" + model.session.dayId} model={model} isPhone={isPhone} notify={notify} /> : library.openId ? <ReaderScreen library={library} api={readingApi} language="ja" notify={notify} /> : <>
-      <Chrome desktop={!isPhone} section={section} onSectionChange={(next) => { setSection(next); if (tab === "settings") setTab("today"); }} tab={tab} today={today} dueCount={dueCount} onNavigate={setTab}>
+      <Chrome desktop={!isPhone} section={section} onSectionChange={(next) => { changeSection(next); if (tab === "settings") setTab("today"); }} tab={tab} today={today} dueCount={dueCount} onNavigate={setTab} onHome={goHome}>
         {tab === "settings" ? <SettingsScreen phone={isPhone} model={model} display={display} setDisplay={setDisplay} notify={notify} onLogout={onLogout} onReset={onReset} /> : <HomeScreen model={model} library={library} section={section} tab={tab} today={today} desktop={!isPhone} notify={notify} />}
       </Chrome>
     </>}
