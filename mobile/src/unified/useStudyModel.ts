@@ -7,6 +7,7 @@ import { useLearningPlanSync, updateDailyLearningCount } from "../../.generated/
 import { createSourcePersistence, useSourceWriteQueue } from "../../.generated/product/shared/controllers/domain/sourcePersistence.js";
 import { createProgressActions } from "../../.generated/product/shared/controllers/domain/progressActions.js";
 import { createSessionController } from "../../.generated/product/shared/controllers/domain/sessionController.js";
+import type { Completion } from "./CompletionHud";
 import { createSessionOpeners } from "../../.generated/product/shared/controllers/domain/sessionOpeners.js";
 import { useSessionSelection } from "../../.generated/product/shared/controllers/domain/sessionSelectors.js";
 import { createQuizInputActions } from "../../.generated/product/shared/controllers/domain/sessionInput.js";
@@ -118,6 +119,8 @@ export function useStudyModel(initial: BootData, today: string, notify: (text: s
     });
   };
   const goHome = () => { setSession(null); };
+  // The last finished quiz; the home screen shows it once and clears it.
+  const [completion, setCompletion] = useState<Completion | null>(null);
   // Attempt dates are days; the order in which Days were opened, answered or graded here breaks same-day ties in recent study.
   const [recentOpened, setRecentOpened] = useState<string[]>([]);
   const touchRecent = (path: LearningPath) => setRecentOpened(previous => [toLearningPathKey(path), ...previous.filter(key => key !== toLearningPathKey(path))].slice(0, 50));
@@ -130,6 +133,7 @@ export function useStudyModel(initial: BootData, today: string, notify: (text: s
     applyReviewResultForDay: (day: any, date: string, results: any) => applyReviewResultForDay(day, date, results, srs),
     applyQuizResultForDay: (day: any, date: string, results: any) => applyQuizResultForDay(day, date, results, srs),
     persistSourceDayResult: persistence.persistSourceDayResult, goHome,
+    onQuizComplete: (result: Omit<Completion, "id">) => setCompletion({ ...result, id: Date.now() }),
   });
   const input = createQuizInputActions({ currentItem, goNextQuizItem: controller.goNextQuizItem, normalizeProblem, session, setSession, updateLastResultNow });
   const openers = createSessionOpeners({ getPathDay, isQuizTarget, markDayAttemptNow, setSession, shuffleArray, stateCurriculum: state.curriculum });
@@ -143,7 +147,7 @@ export function useStudyModel(initial: BootData, today: string, notify: (text: s
   return {
     state, files, book, books: listAvailableBooks(files), session, setSession, editor, setEditor,
     srs, plan, dashboard, queue, currentItem: currentItem as StudyItem | null, sessionDay, sessionItems,
-    ...controller, ...input, ...progress, ...openers, markDayAttemptNow, updateLastResultNow, recentOpened, updateMemo, memos, reloadBooks, getDisplayItemId: displayItemId, goHome, refresh,
+    ...controller, ...input, ...progress, ...openers, markDayAttemptNow, updateLastResultNow, recentOpened, completion, clearCompletion: () => setCompletion(null), updateMemo, memos, reloadBooks, getDisplayItemId: displayItemId, goHome, refresh,
     async switchBook(next: string) {
       if (next === book) return;
       await waitForSaves();

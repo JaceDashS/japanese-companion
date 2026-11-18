@@ -14,6 +14,8 @@ import type {
 import type { PersistSourceDayResult } from "./sourcePersistence.ts";
 
 type DayResult = { day: StudyDay; allPass?: boolean };
+/** Outcome of a finished quiz, shown once the learner is back on the home screen. */
+export type QuizCompletion = { passCount: number; total: number; allPass: boolean; nextReviewDate: string | null };
 type ProblemPayload = { error: string; problem: unknown };
 
 type SessionControllerOptions = {
@@ -37,6 +39,7 @@ type SessionControllerOptions = {
   applyQuizResultForDay: (day: StudyDay, today: string, gradedMap: Record<string, QuizResult>) => DayResult;
   persistSourceDayResult: PersistSourceDayResult;
   goHome: () => void;
+  onQuizComplete?: (completion: QuizCompletion) => void;
 };
 
 export function createSessionController({
@@ -60,6 +63,7 @@ export function createSessionController({
   applyQuizResultForDay,
   persistSourceDayResult,
   goHome,
+  onQuizComplete,
 }: SessionControllerOptions) {
   const canFinalizeQuiz = () => {
     if (!session || session.phase !== "quiz") return false;
@@ -102,6 +106,7 @@ export function createSessionController({
     void persistSourceDayResult(day, nextDay, path);
 
     const failedIds = sessionItems.filter(item => gradedMap[item.id] === "FAIL").map(item => item.id);
+    onQuizComplete?.({ passCount, total: reviewedCount, allPass: failedIds.length === 0, nextReviewDate: nextDay.nextReviewDate ?? null });
     if (failedIds.length === 0) goHome();
     else setSession(prev => prev && ({
       ...prev, phase: "study", index: 0, itemIds: failedIds,

@@ -23,6 +23,7 @@ import { isDesktopLayout } from "./responsive";
 import { BrowserTheme } from "./BrowserTheme";
 import { ReaderScreen, useReadingLibrary } from "./ReadingLibrary";
 import { readingApi } from "./japaneseWords";
+import { CompletionHud } from "./CompletionHud";
 type Gate = { kind: "checking" } | { kind: "login" } | { kind: "password" } | { kind: "blocked" } | { kind: "ready"; user: User; boot: BootData };
 
 /** Common Expo root; each account gets a new study screen lifecycle. */
@@ -110,6 +111,7 @@ function StudyApp({ boot, user, onLogout, onReset }: { boot: BootData; user: Use
         {tab === "settings" ? <SettingsScreen phone={isPhone} model={model} display={display} setDisplay={setDisplay} notify={notify} onLogout={onLogout} onReset={onReset} /> : <HomeScreen model={model} library={library} section={section} tab={tab} today={today} desktop={!isPhone} notify={notify} />}
       </Chrome>
     </>}
+    <CompletionHud completion={model.session ? null : model.completion} today={today} onDone={model.clearCompletion} />
     {toast && <Toast text={toast.text} tone={toast.tone} phone={isPhone && !model.session} />}
   </View></Device.Provider></Theme.Provider>;
 }
