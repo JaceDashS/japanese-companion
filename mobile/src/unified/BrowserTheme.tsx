@@ -8,6 +8,7 @@ export function BrowserTheme({ scheme }: { scheme: "dark" | "light" }) {
   if (Platform.OS !== "web") return null;
   return React.createElement("style", null, `
     :root { color-scheme: ${scheme}; }
+    :not(input):not(textarea):not([contenteditable="true"]) { caret-color: transparent; }
     * { scrollbar-color: ${c.dim} ${c.panel}; scrollbar-width: thin; }
     *::-webkit-scrollbar { width: 10px; height: 10px; }
     *::-webkit-scrollbar-track, *::-webkit-scrollbar-corner { background: ${c.panel}; }
