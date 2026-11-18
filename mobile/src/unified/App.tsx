@@ -96,7 +96,7 @@ function StudyApp({ boot, user, onLogout, onReset }: { boot: BootData; user: Use
     onReturn: () => setTab("today"),
   });
   return <Theme.Provider value={c}><Device.Provider value={{ phone: isPhone }}><View style={[{ flex: 1, backgroundColor: c.bg }, gradient(`radial-gradient(900px 480px at 85% -10%, ${c.glow}, transparent 70%)`)]}><BrowserTheme scheme={display.theme} /><StatusBar style={display.theme === "light" ? "dark" : "light"} /><Notices />
-    {model.session ? <SessionScreen key={model.session.unitId + ":" + model.session.dayId} model={model} isPhone={isPhone} notify={notify} /> : library.openId ? <ReaderScreen library={library} api={readingApi} language="ja" notify={notify} /> : <>
+    {model.session ? <SessionScreen key={model.session.unitId + ":" + model.session.dayId} model={model} isPhone={isPhone} notify={notify} /> : library.openId ? <ReaderScreen library={library} api={readingApi} language="ja" notify={notify} onNoteSaved={model.applyMemo} /> : <>
       <Chrome desktop={!isPhone} section={section} onSectionChange={(next) => { setSection(next); if (tab === "settings") setTab("today"); }} tab={tab} today={today} dueCount={dueCount} onNavigate={setTab}>
         {tab === "settings" ? <SettingsScreen phone={isPhone} model={model} display={display} setDisplay={setDisplay} notify={notify} onLogout={onLogout} onReset={onReset} /> : <HomeScreen model={model} library={library} section={section} tab={tab} today={today} desktop={!isPhone} notify={notify} />}
       </Chrome>

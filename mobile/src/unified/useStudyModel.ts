@@ -14,7 +14,8 @@ import { getPathDay, replaceDay, isQuizTarget, shuffleArray, getDisplayDayIndex,
 import { buildProblemPayload, createProblemDraft, normalizeJsonBlock, normalizeProblem } from "../../.generated/product/shared/controllers/domain/problem.js";
 import { normalizeSrsSettings } from "../../.generated/product/shared/domain/srsPreferences.js";
 import { applyQuizResultForDay, applyReviewResultForDay } from "../../.generated/product/shared/domain/srs.js";
-import { mergeCurriculumFromSource } from "../../.generated/product/shared/controllers/domain/curriculumSource.js";
+import { mergeCurriculumFromSource, patchMemoInCurriculumFiles } from "../../.generated/product/shared/controllers/domain/curriculumSource.js";
+import { japaneseMemoKey } from "../../.generated/product/shared/controllers/domain/expression.js";
 import { applyDayDecompositionImport, resetDayDecompositions, resetDayProblems } from "../../.generated/product/shared/controllers/domain/dayClipboardImporter.js";
 import { buildDayWordCopyPayload } from "../../.generated/product/shared/controllers/domain/dayClipboardHelpers.js";
 import { apiFetch, apiUrl, hydrateState, loadView, saveState } from "./runtime";
@@ -105,17 +106,41 @@ export function useStudyModel(initial: BootData, today: string, notify: (text: s
     setBook(fallback); setSession(null);
     await writeAppPreferences({ selectedBookId: fallback });
   };
-  /** Saves a memo or decomposition and keeps the related-note list in step with memo edits. */
+  const syncMemoState = (expression: string, value: string, target?: { reading?: string; meaningKo?: string }) => {
+    const key = japaneseMemoKey(expression);
+    if (!key) return;
+    setFiles((previous) => patchMemoInCurriculumFiles(previous, expression, value));
+    setMemos((previous) => {
+      const existing = previous.find((entry) => japaneseMemoKey(entry.expression) === key);
+      const rest = previous.filter((entry) => japaneseMemoKey(entry.expression) !== key);
+      return value.trim()
+        ? [...rest, { expression: key, memo: value, reading: String(target?.reading ?? existing?.reading ?? ""), meaningKo: String(target?.meaningKo ?? existing?.meaningKo ?? "") }]
+        : rest;
+    });
+  };
+  /** Applies an already-persisted memo (e.g. from WordLookup) across loaded books, curriculum and related notes. */
+  const applyMemo = (expression: string, value: string) => {
+    const key = japaneseMemoKey(expression);
+    if (!key) return;
+    setState((previous) => ({
+      ...previous,
+      curriculum: previous.curriculum.map((unit) => ({
+        ...unit,
+        days: unit.days.map((day) => (day.items.some((item) => japaneseMemoKey(String(item.expression ?? "")) === key)
+          ? { ...day, items: day.items.map((item) => (japaneseMemoKey(String(item.expression ?? "")) === key ? { ...item, memo: value } : item)) }
+          : day)),
+      })),
+    }));
+    syncMemoState(expression, value);
+  };
+  /** Saves a memo or decomposition and keeps loaded books and related-note lists in step with memo edits. */
   const updateMemo = (itemId: string, field: "memo" | "decomposition", value: string) => {
     progress.updateMemo(itemId, field, value);
     if (field !== "memo") return;
     const target = getPathDay(state.curriculum, { unitId: session?.unitId ?? "", dayId: session?.dayId ?? "" })?.items.find((item: StudyItem) => item.id === itemId);
     const expression = String(target?.expression ?? "");
     if (!expression) return;
-    setMemos((previous) => {
-      const rest = previous.filter((entry) => entry.expression !== expression);
-      return value.trim() ? [...rest, { expression, memo: value, reading: String(target?.reading ?? ""), meaningKo: String(target?.meaningKo ?? "") }] : rest;
-    });
+    syncMemoState(expression, value, { reading: String(target?.reading ?? ""), meaningKo: String(target?.meaningKo ?? "") });
   };
   const goHome = () => { setSession(null); };
   // Attempt dates are days; the order in which Days were opened, answered or graded here breaks same-day ties in recent study.
@@ -143,7 +168,7 @@ export function useStudyModel(initial: BootData, today: string, notify: (text: s
   return {
     state, files, book, books: listAvailableBooks(files), session, setSession, editor, setEditor,
     srs, plan, dashboard, queue, currentItem: currentItem as StudyItem | null, sessionDay, sessionItems,
-    ...controller, ...input, ...progress, ...openers, markDayAttemptNow, updateLastResultNow, recentOpened, updateMemo, memos, reloadBooks, getDisplayItemId: displayItemId, goHome, refresh,
+    ...controller, ...input, ...progress, ...openers, markDayAttemptNow, updateLastResultNow, recentOpened, updateMemo, applyMemo, memos, reloadBooks, getDisplayItemId: displayItemId, goHome, refresh,
     async switchBook(next: string) {
       if (next === book) return;
       await waitForSaves();

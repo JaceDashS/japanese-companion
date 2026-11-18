@@ -121,7 +121,7 @@ export function Bookshelf({ library, api, language, notify }: { library: Reading
 }
 
 /** Full-screen reader: the top row keeps the book selector and actions; pages, bookmarks and page turns below. */
-export function ReaderScreen({ library, api, language, notify }: { library: ReadingLibraryModel; api: LibraryApi; language: Language; notify: Notify }) {
+export function ReaderScreen({ library, api, language, notify, onNoteSaved }: { library: ReadingLibraryModel; api: LibraryApi; language: Language; notify: Notify; onNoteSaved?: (word: string, note: string) => void }) {
   const c = useContext(Theme);
   const { phone } = useContext(Device);
   const [word, setWord] = useState<string | null>(null);
@@ -188,7 +188,7 @@ export function ReaderScreen({ library, api, language, notify }: { library: Read
         <T weight="700">{page + 1}페이지</T><T size={12.5} tone="muted" numberOfLines={2}>{pages[page]?.tokens.map(token => token.text).join("").trim()}</T>
       </Pressable>; })}
     </Sheet>}
-    {word && <WordLookup key={word} api={api} word={word} language={language} onClose={() => setWord(null)} />}
+    {word && <WordLookup key={word} api={api} word={word} language={language} onClose={() => setWord(null)} onNoteSaved={onNoteSaved} />}
     {editing && book && <MaterialEditor api={api} book={book} onClose={() => setEditing(false)} onSaved={saved => { setEditing(false); library.replaceBook(saved); }} />}
     {importing && book && <BookImporter api={api} language={language} books={books} targetId={book.id} notify={notify} onClose={() => setImporting(false)} onSaved={library.replaceBook} />}
   </View>;
@@ -234,7 +234,7 @@ export function BookImporter({ api, language, books, targetId, notify, onClose, 
 }
 
 /** One registered word in the order furigana, meaning, personal note, decomposition. The note is shared by every material. */
-export function WordLookup({ api, word, language, onClose }: { api: LibraryApi; word: string; language: Language; onClose: () => void }) {
+export function WordLookup({ api, word, language, onClose, onNoteSaved }: { api: LibraryApi; word: string; language: Language; onClose: () => void; onNoteSaved?: (word: string, note: string) => void }) {
   const [detail, setDetail] = useState<WordDetail | null | undefined>(undefined);
   const [note, setNote] = useState("");
   const [error, setError] = useState("");
@@ -252,7 +252,7 @@ export function WordLookup({ api, word, language, onClose }: { api: LibraryApi; 
   const save = async () => {
     if (!detail || busy) return;
     setBusy(true); setError(""); setSaved(false);
-    try { await api("word-note", { word: detail.word, note }); if (mounted.current) setSaved(true); }
+    try { await api("word-note", { word: detail.word, note }); onNoteSaved?.(detail.word, note); if (mounted.current) setSaved(true); }
     catch (cause) { if (mounted.current) setError(errorText(cause, "메모를 저장하지 못했습니다.")); }
     finally { if (mounted.current) setBusy(false); }
   };

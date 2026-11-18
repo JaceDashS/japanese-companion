@@ -11,6 +11,8 @@ import { identifyStudyState, displayItemId } from "../src/unified/identity.ts";
 import type { StudyState } from "../../shared/domain/studyTypes.ts";
 import { NativeQueueStorage } from "../src/unified/queueStorage.ts";
 import { applyReviewResultForDay } from "../.generated/product/shared/domain/srs.js";
+import { patchMemoInCurriculumFiles } from "../.generated/product/shared/controllers/domain/curriculumSource.js";
+import { japaneseMemoKey } from "../.generated/product/shared/controllers/domain/expression.js";
 const buildersPath = "../../shared/controllers/domain/homeDashboardBuilders.ts";
 const { buildReviewDue } = await import(buildersPath);
 const openersPath = "../../shared/controllers/domain/sessionOpeners.ts";
@@ -176,4 +178,18 @@ test("last quiz next goes home or studies only failures, then goes home", () => 
       assert.equal(homes, 1); assert.equal(saves, 1);
     }
   }
+});
+
+test("memo patching updates every loaded book and normalizes parenthesized kana keys", () => {
+  assert.equal(japaneseMemoKey("（夢が）かなう"), "かなう");
+  assert.equal(japaneseMemoKey("ろくに(説明されなかった)"), "ろくに");
+  const files = {
+    "asset/n1.json": { days: [{ day: [{ items: [{ id: "n1-1", expression: "（夢が）かなう", memo: "" }] }] }] },
+    "asset/n2.json": { days: [{ day: [{ items: [{ id: "n2-1", expression: "かなう", memo: "" }, { id: "n2-2", expression: "施設", memo: "keep" }] }] }] },
+  };
+  const updated = patchMemoInCurriculumFiles(files, "かなう", "새 메모");
+  assert.equal((updated["asset/n1.json"] as any).days[0].day[0].items[0].memo, "새 메모");
+  assert.equal((updated["asset/n2.json"] as any).days[0].day[0].items[0].memo, "새 메모");
+  assert.equal((updated["asset/n2.json"] as any).days[0].day[0].items[0].memoPersonal, "새 메모");
+  assert.equal((updated["asset/n2.json"] as any).days[0].day[0].items[1].memo, "keep");
 });

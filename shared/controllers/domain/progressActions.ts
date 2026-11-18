@@ -1,4 +1,5 @@
 import type { LearningPath, QuizResult, SessionView, SetStudyState, StudyDay, StudyItem, StudyUnit } from "../../domain/studyTypes.ts";
+import { japaneseMemoKey } from "./expression.ts";
 
 type PersistSourceField = (item: StudyItem, field: string, value: unknown) => Promise<unknown>;
 type PersistSourceDayField = (day: StudyDay, field: string, value: unknown, path?: LearningPath) => Promise<unknown>;
@@ -59,8 +60,9 @@ export function createProgressActions({
     if (!targetItem) return;
 
     if (field === "memo") {
-      const expression = targetItem.expression;
-      const matches = (item: { id: string; expression?: string }) => item.id === itemId || Boolean(expression && item.expression === expression);
+      const targetKey = japaneseMemoKey(targetItem.expression ?? "");
+      const matches = (item: { id: string; expression?: string }) =>
+        item.id === itemId || Boolean(targetKey && item.expression && japaneseMemoKey(item.expression) === targetKey);
       setState((prev) => ({
         ...prev,
         curriculum: prev.curriculum.map((unit) => ({

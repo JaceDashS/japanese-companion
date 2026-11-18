@@ -21,3 +21,10 @@ export function getExpressionStrict(item: unknown, context = "item"): string {
   }
   return expression;
 }
+
+/** Canonical memo key for Japanese expressions: NFKC normalized with parenthesized context removed. */
+export function japaneseMemoKey(expression: string): string {
+  const normalized = expression.normalize("NFKC").trim();
+  const stripped = normalized.replace(/[(（][^()（）]*[)）]/g, "").trim();
+  return stripped || normalized;
+}

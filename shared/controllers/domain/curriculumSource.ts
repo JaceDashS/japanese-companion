@@ -10,6 +10,62 @@ import {
   toStage,
 } from "./curriculumSourceAccess.ts";
 import type { SourceRef, StudyUnit } from "../../domain/studyTypes.ts";
+import { japaneseMemoKey } from "./expression.ts";
+
+/** Updates memo and memoPersonal for every item matching the canonical expression key across all loaded books. */
+export function patchMemoInCurriculumFiles(
+  files: Record<string, unknown>,
+  expression: string,
+  memo: string,
+): Record<string, unknown> {
+  const targetKey = japaneseMemoKey(expression);
+  if (!targetKey) return files;
+  let changed = false;
+  const nextFiles: Record<string, unknown> = {};
+  for (const [sourcePath, rawFile] of Object.entries(files)) {
+    const file = rawFile && typeof rawFile === "object" ? (rawFile as Record<string, unknown>) : null;
+    const units = Array.isArray(file?.days) ? file.days : null;
+    if (!file || !units) {
+      nextFiles[sourcePath] = rawFile;
+      continue;
+    }
+    let fileChanged = false;
+    const nextUnits = units.map((rawUnit) => {
+      const unit = rawUnit && typeof rawUnit === "object" ? (rawUnit as Record<string, unknown>) : null;
+      const days = Array.isArray(unit?.day) ? unit.day : null;
+      if (!unit || !days) return rawUnit;
+      let unitChanged = false;
+      const nextDays = days.map((rawDay) => {
+        const day = rawDay && typeof rawDay === "object" ? (rawDay as Record<string, unknown>) : null;
+        const items = Array.isArray(day?.items) ? day.items : null;
+        if (!day || !items) return rawDay;
+        let dayChanged = false;
+        const nextItems = items.map((rawItem) => {
+          const item = rawItem && typeof rawItem === "object" ? (rawItem as Record<string, unknown>) : null;
+          if (!item || typeof item.expression !== "string" || japaneseMemoKey(item.expression) !== targetKey) {
+            return rawItem;
+          }
+          if (item.memo === memo && item.memoPersonal === memo) return rawItem;
+          dayChanged = true;
+          return { ...item, memo, memoPersonal: memo };
+        });
+        if (!dayChanged) return rawDay;
+        unitChanged = true;
+        return { ...day, items: nextItems };
+      });
+      if (!unitChanged) return rawUnit;
+      fileChanged = true;
+      return { ...unit, day: nextDays };
+    });
+    if (fileChanged) {
+      changed = true;
+      nextFiles[sourcePath] = { ...file, days: nextUnits };
+    } else {
+      nextFiles[sourcePath] = rawFile;
+    }
+  }
+  return changed ? nextFiles : files;
+}
 
 export function mergeCurriculumFromSource(curriculum: StudyUnit[], files?: Record<string, unknown>): StudyUnit[] {
   if (!files) return curriculum;
