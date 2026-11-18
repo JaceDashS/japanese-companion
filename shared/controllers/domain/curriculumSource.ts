@@ -33,6 +33,7 @@ export function mergeCurriculumFromSource(curriculum: StudyUnit[], files?: Recor
             ? toNullableDate(sourceDay.nextReviewDate, day.nextReviewDate)
             : day.nextReviewDate,
         lastAttemptDate: toOptionalString(sourceDay?.lastAttemptDate, day.lastAttemptDate),
+        lastAttemptAt: toOptionalString(sourceDay?.lastAttemptAt, day.lastAttemptAt ?? ""),
         lastCompletedDate: toOptionalString(sourceDay?.lastCompletedDate, day.lastCompletedDate),
         items: day.items.map((item) => {
           const sourceRef = item.sourceRef as SourceRef | null | undefined;

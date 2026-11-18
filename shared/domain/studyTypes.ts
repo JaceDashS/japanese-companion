@@ -50,6 +50,8 @@ export type StudyDay = {
   stageCompleteDate?: string | null;
   nextReviewDate?: string | null;
   lastAttemptDate?: string;
+  /** ISO time of the latest attempt, set by the server; orders Days attempted on the same date. */
+  lastAttemptAt?: string;
   lastCompletedDate?: string;
   items: StudyItem[];
   [key: string]: unknown;
