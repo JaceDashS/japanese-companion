@@ -11,6 +11,7 @@ import { Btn, Chip, CopyId, Empty, fonts, Input, MarkdownBox, MemoEditor, primar
 import { WordActions } from "./WordActions";
 import { useSessionKeys } from "./useSessionKeys";
 import { FuriganaSentence, problemFurigana, RelatedNotes } from "./StudyNotes";
+import { relatedMemos } from "./japaneseWords";
 
 const markdown = (text: string) => <StudyMarkdown text={text} client={client} />;
 
@@ -114,7 +115,8 @@ export function SessionScreen({ model, isPhone, notify }: { model: StudyModel; i
   const verdict = item && session.graded?.[item.id];
   const showChoices = item && (session.showChoices?.[item.id] || selected);
   const furigana = problemFurigana(item?.problem);
-  const relatedButton = <Btn variant="ghost" title="관련 노트" onPress={() => setSheet("related")} testID="related-notes" />
+  const hasRelated = useMemo(() => Boolean(item && relatedMemos(String(item.expression ?? ""), model.memos).length > 0), [item, model.memos]);
+  const relatedButton = hasRelated ? <Btn variant="ghost" title="관련 노트" onPress={() => setSheet("related")} testID="related-notes" /> : null;
   const wordSize = Math.max(41.6, Math.min(70.4, viewport * 0.12));
   const sentenceSize = Math.max(18.4, Math.min(24.8, viewport * 0.046));
   const draft = model.editor.draft;
@@ -156,7 +158,7 @@ export function SessionScreen({ model, isPhone, notify }: { model: StudyModel; i
         {showChoices ? <View style={{ gap: 8 }}>{(session.choiceOrders?.[item.id] ?? problem.choices).map((choice: string, index: number) => <Choice key={index + ":" + choice} index={index} text={choice} phone={isPhone} selected={selected === choice} onPress={() => model.selectQuizChoice(choice)} />)}</View>
           : <Btn size="lg" title="보기 열기" onPress={model.openQuizChoices} />}
         {verdict && <Verdict pass={verdict === "PASS"}>{verdict === "PASS" ? "정답입니다." : `오답입니다. 정답: ${problem.answer || "(미설정)"}`}</Verdict>}
-        {verdict === "FAIL" && <View style={{ flexDirection: "row" }}>{relatedButton}</View>}
+        {verdict === "FAIL" && relatedButton && <View style={{ flexDirection: "row" }}>{relatedButton}</View>}
         <Btn variant="ghost" title="문제 수정" onPress={() => model.openProblemEditor(item.problem)} />
       </> : <>
         <T size={13.1} tone="muted">{problem ? "보기가 없습니다." : "아직 문제가 없습니다."}</T>
@@ -179,11 +181,13 @@ export function SessionScreen({ model, isPhone, notify }: { model: StudyModel; i
       </View>
       <View style={{ flex: 1 }} />
       <Btn title={quiz ? "学" : "問"} label={quiz ? "학습으로" : "문제로"} disabled={session.phase === "done" || Boolean(session.postQuizStudy && study)} onPress={togglePhase} />
-      {isPhone ? <>
+      {isPhone ? (quiz ? (
+        <Btn size="icon" title="✎" label="노트" onPress={() => setSheet("notes")} />
+      ) : <>
         <Btn size="icon" title="▦" label="목록" onPress={() => setSheet("items")} />
-        <Btn size="icon" title="✎" label="노트" disabled={!quiz} onPress={() => setSheet("notes")} />
+        <Btn size="icon" title="✎" label="노트" disabled onPress={() => setSheet("notes")} />
         <Btn size="icon" title="⋯" label="단어 데이터" disabled={session.phase === "done"} onPress={() => setSheet("words")} />
-      </> : <>
+      </>) : <>
         <Segment options={[{ key: "items", label: "목록" }, { key: "notes", label: "노트" }, { key: "hide", label: "숨김" }]} value={panel ?? "hide"} onChange={(key) => setPanel(key === "hide" ? null : key as "items" | "notes")} />
         <Btn title="단어 데이터" disabled={session.phase === "done"} onPress={() => setSheet("words")} />
       </>}
@@ -206,7 +210,7 @@ export function SessionScreen({ model, isPhone, notify }: { model: StudyModel; i
       </> : <><View style={{ flex: 1 }} /><Btn variant="primary" size="lg" title="홈으로" onPress={model.goHome} /></>}
     </View>
     {sheet === "items" && <Sheet title={`${model.sessionDay?.title} 목록`} onClose={() => setSheet(null)}>{items}</Sheet>}
-    {sheet === "notes" && <Sheet title="현재 단어 노트" onClose={() => setSheet(null)}>{notes}</Sheet>}
+    {sheet === "notes" && <Sheet title="현재 단어 노트" swipeToClose onClose={() => setSheet(null)}>{notes}</Sheet>}
     {sheet === "words" && <WordActions model={model} path={session} notify={notify} onClose={() => setSheet(null)} />}
     {sheet === "related" && item && <RelatedNotes expression={String(item.expression ?? "")} memos={model.memos} onClose={() => setSheet(null)} render={markdown} />}
     {model.editor.open && item && <Sheet title="문제 편집" onClose={() => model.setEditor((previous) => ({ ...previous, open: false, error: "" }))}>

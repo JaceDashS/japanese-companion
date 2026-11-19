@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type StyleProp, type TextStyle, type ViewStyle } from "react-native";
+import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { ActivityIndicator, Modal, PanResponder, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type GestureResponderEvent, type StyleProp, type TextStyle, type ViewStyle } from "react-native";
 
 /** Ink and sakura tokens from the former web theme; light keeps the washi palette. */
 const dark = {
@@ -167,25 +167,73 @@ export function Spinner() {
   return <ActivityIndicator size={12} color={c.accent} />;
 }
 
+const SWIPE_CLOSE_DISTANCE = 60;
+function touchPageY(event: GestureResponderEvent): number {
+  const native = event.nativeEvent as GestureResponderEvent["nativeEvent"] & { touches?: Array<{ pageY?: number }>; changedTouches?: Array<{ pageY?: number }> };
+  return native.touches?.[0]?.pageY ?? native.changedTouches?.[0]?.pageY ?? native.pageY;
+}
+
 /** Bottom sheet with a grip on phones and a centered dialog on PC, as in the former UI. */
-export function Sheet({ title, onClose, children, footer, reducedMotion = false }: { title: string; onClose: () => void; children: React.ReactNode; footer?: React.ReactNode; reducedMotion?: boolean }) {
+export function Sheet({ title, onClose, children, footer, reducedMotion = false, swipeToClose = false }: { title: string; onClose: () => void; children: React.ReactNode; footer?: React.ReactNode; reducedMotion?: boolean; swipeToClose?: boolean }) {
   const c = useContext(Theme);
   const { phone } = useContext(Device);
+  const [dragY, setDragY] = useState(0);
+  const scrollY = useRef(0);
+  const touchStart = useRef<{ y: number; atTop: boolean } | null>(null);
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
+  const headerPan = useMemo(() => PanResponder.create({
+    onMoveShouldSetPanResponder: (_, gesture) => swipeToClose && gesture.dy > 6 && Math.abs(gesture.dy) > Math.abs(gesture.dx),
+    onPanResponderMove: (_, gesture) => { setDragY(Math.max(0, gesture.dy)); },
+    onPanResponderRelease: (_, gesture) => {
+      if (gesture.dy >= SWIPE_CLOSE_DISTANCE || gesture.vy >= 0.5) closeRef.current();
+      setDragY(0);
+    },
+    onPanResponderTerminate: () => { setDragY(0); },
+  }), [swipeToClose]);
   useEffect(() => {
     if (Platform.OS !== "web") return;
     const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") onClose(); };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
+  const onBodyTouchStart = (event: GestureResponderEvent) => {
+    if (!swipeToClose) return;
+    touchStart.current = { y: touchPageY(event), atTop: scrollY.current <= 2 };
+  };
+  const onBodyTouchMove = (event: GestureResponderEvent) => {
+    if (!swipeToClose || !touchStart.current?.atTop) return;
+    const dy = touchPageY(event) - touchStart.current.y;
+    if (dy > 8) setDragY(dy);
+    else if (dy < 0) { touchStart.current.atTop = false; setDragY(0); }
+  };
+  const onBodyTouchEnd = (event: GestureResponderEvent) => {
+    if (!swipeToClose || !touchStart.current) return;
+    const { y, atTop } = touchStart.current;
+    touchStart.current = null;
+    const dy = touchPageY(event) - y;
+    setDragY(0);
+    if (atTop && dy >= SWIPE_CLOSE_DISTANCE) closeRef.current();
+  };
+  const onBodyTouchCancel = () => { touchStart.current = null; setDragY(0); };
   return <Modal transparent animationType={reducedMotion ? "none" : phone ? "slide" : "fade"} onRequestClose={onClose}>
     <View style={{ flex: 1, backgroundColor: c.backdrop, justifyContent: phone ? "flex-end" : "center", alignItems: phone ? "stretch" : "center", padding: phone ? 0 : 28 }}>
       <Pressable accessibilityLabel="닫기" onPress={onClose} style={StyleSheet.absoluteFill} />
-      <View accessibilityRole="none" aria-modal style={{ width: "100%", maxWidth: phone ? undefined : 680, maxHeight: phone ? "86%" : "78%", backgroundColor: c.panel, borderWidth: 1, borderColor: c.border, borderBottomWidth: phone ? 0 : 1, borderRadius: phone ? 0 : 16, borderTopLeftRadius: phone ? 20 : 16, borderTopRightRadius: phone ? 20 : 16 }}>
+      <View accessibilityRole="none" aria-modal style={[{ width: "100%", maxWidth: phone ? undefined : 680, maxHeight: phone ? "86%" : "78%", backgroundColor: c.panel, borderWidth: 1, borderColor: c.border, borderBottomWidth: phone ? 0 : 1, borderRadius: phone ? 0 : 16, borderTopLeftRadius: phone ? 20 : 16, borderTopRightRadius: phone ? 20 : 16 }, dragY > 0 ? { transform: [{ translateY: dragY }] } : null]}>
         {phone && <View style={{ position: "absolute", top: 7, alignSelf: "center", width: 38, height: 4, borderRadius: 999, backgroundColor: c.border }} />}
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingTop: 14, paddingBottom: 10, paddingHorizontal: 16, borderBottomWidth: 1, borderColor: c.borderSoft }}>
+        <View {...(swipeToClose ? headerPan.panHandlers : undefined)} style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingTop: 14, paddingBottom: 10, paddingHorizontal: 16, borderBottomWidth: 1, borderColor: c.borderSoft }}>
           <T size={15} weight="700" style={{ flex: 1 }}>{title}</T>{footer}<Btn variant="ghost" size="icon" title="×" label="닫기" onPress={onClose} />
         </View>
-        <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 16, paddingBottom: 20, gap: 12 }}>{children}</ScrollView>
+        <ScrollView
+          keyboardShouldPersistTaps="handled"
+          scrollEventThrottle={16}
+          onScroll={(event) => { scrollY.current = event.nativeEvent.contentOffset.y; }}
+          onTouchStart={onBodyTouchStart}
+          onTouchMove={onBodyTouchMove}
+          onTouchEnd={onBodyTouchEnd}
+          onTouchCancel={onBodyTouchCancel}
+          contentContainerStyle={{ padding: 16, paddingBottom: 20, gap: 12 }}
+        >{children}</ScrollView>
       </View>
     </View>
   </Modal>;
