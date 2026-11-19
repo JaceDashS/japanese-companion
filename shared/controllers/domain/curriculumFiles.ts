@@ -1,4 +1,3 @@
-import { apiFetch, apiUrl } from "../api.ts";
 import { createInitialState, getAvailableBooks } from "../data/initialState.ts";
 import { loadState } from "../data/storage.ts";
 import { mergeCurriculumFromSource } from "./curriculumSource.ts";
@@ -20,22 +19,6 @@ export type AvailableBook = { id: string; title: string };
 type BuildAppStateOptions = {
   dailyNewLearningCount?: unknown;
 };
-
-export async function loadCurriculumFiles() {
-  const response = await apiFetch(apiUrl("reload-curriculum", { t: Date.now() }), {
-    credentials: "include",
-  });
-  if (!response.ok) {
-    const body = await response.text();
-    throw new Error(`Failed to load curriculum: ${response.status} ${body}`);
-  }
-
-  const payload = await response.json();
-  if (!payload?.ok || !payload?.files) {
-    throw new Error("Failed to load curriculum: invalid response");
-  }
-  return payload.files as AssetFileMap;
-}
 
 export function getDefaultBookId(availableBooks: AvailableBook[]) {
   return availableBooks.find((b) => b.id === "jlpt-one-book-n1")?.id ?? availableBooks[0]?.id ?? "";

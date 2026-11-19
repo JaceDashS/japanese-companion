@@ -153,6 +153,14 @@ export class SourceWriteQueue {
 
   getSnapshot = () => this.snapshot;
 
+  async pendingBodies() {
+    await this.ready;
+    return [...this.records.values()].sort(compareRecords).flatMap(record => {
+      if (!record.init.body) return [];
+      try { return [JSON.parse(record.init.body)]; } catch { return []; }
+    });
+  }
+
   async retryItem(id: number) {
     await this.ready;
     const record = this.records.get(id);

@@ -23,21 +23,23 @@ export type SourceWriteQueueController = SourceWriteQueueSnapshot & {
   waitForIdle: () => Promise<void>;
 };
 
-export function useSourceWriteQueue(fetchImpl = apiFetch): SourceWriteQueueController {
-  const queue = getSourceWriteQueue(fetchImpl);
-  const snapshot = useSyncExternalStore(queue.subscribe, queue.getSnapshot, queue.getSnapshot);
+const inactiveSnapshot: SourceWriteQueueSnapshot = { items: [], isReady: false, isPersistent: true };
+const inactiveSubscribe = () => () => {};
+const getInactiveSnapshot = () => inactiveSnapshot;
+
+export function useSourceWriteQueue(fetchImpl = apiFetch, enabled = true): SourceWriteQueueController {
+  const queue = enabled ? getSourceWriteQueue(fetchImpl) : null;
+  const snapshot = useSyncExternalStore(queue?.subscribe ?? inactiveSubscribe, queue?.getSnapshot ?? getInactiveSnapshot, queue?.getSnapshot ?? getInactiveSnapshot);
   return {
     ...snapshot,
-    retryItem: (id) => queue.retryItem(id),
-    discardItem: (id) => queue.discardItem(id),
-    discardFailed: () => queue.discardFailed(),
-    waitForIdle: () => queue.whenIdle(),
+    retryItem: (id) => queue?.retryItem(id) ?? Promise.resolve(),
+    discardItem: (id) => queue?.discardItem(id) ?? Promise.resolve(),
+    discardFailed: () => queue?.discardFailed() ?? Promise.resolve(),
+    waitForIdle: () => queue?.whenIdle() ?? Promise.resolve(),
   };
 }
 
 export function createSourcePersistence(fetchImpl = apiFetch) {
-  const writeQueue = getSourceWriteQueue(fetchImpl);
-
   const persistSourceField = async (item, field, value) => {
     const sourceRef = item?.sourceRef;
     if (!sourceRef || !sourceRef.sourcePath) {
@@ -45,7 +47,7 @@ export function createSourcePersistence(fetchImpl = apiFetch) {
       return false;
     }
 
-    return enqueueSourceWrite(writeQueue, {
+    return enqueueSourceWrite(getSourceWriteQueue(fetchImpl), {
       sourcePath: sourceRef.sourcePath,
       unitPath: sourceRef.unitPath ?? null,
       dayIndex: sourceRef.dayIndex,
@@ -63,7 +65,7 @@ export function createSourcePersistence(fetchImpl = apiFetch) {
       return false;
     }
 
-    return enqueueSourceWrite(writeQueue, {
+    return enqueueSourceWrite(getSourceWriteQueue(fetchImpl), {
       sourcePath: sourceRef.sourcePath,
       unitPath: sourceRef.unitPath ?? null,
       dayIndex: sourceRef.dayIndex,
@@ -115,7 +117,7 @@ export function createSourcePersistence(fetchImpl = apiFetch) {
       lastAttemptDate,
     };
     const results = await Promise.all([...groups.values()].map((group) => enqueueSourceWrite(
-      writeQueue,
+      getSourceWriteQueue(fetchImpl),
       {
         sourcePath: group.sourcePath,
         unitPath: group.unitPath,
@@ -135,6 +137,10 @@ export function createSourcePersistence(fetchImpl = apiFetch) {
     persistSourceDayField,
     persistSourceDayResult,
   };
+}
+
+export function readPendingSourceWrites(fetchImpl = apiFetch) {
+  return getSourceWriteQueue(fetchImpl).pendingBodies();
 }
 
 function getSourceWriteQueue(fetchImpl: SourceWriteFetch) {

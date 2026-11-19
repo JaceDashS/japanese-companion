@@ -15,6 +15,11 @@ export function listenForExpiry(callback: () => void) {
   return () => { if (client.onUnauthenticated === callback) client.onUnauthenticated = undefined; };
 }
 export function setClock(value: Clock) { clock = { value, tick: performance.now() }; }
+export function snapshotClock(): Clock {
+  if (!clock) throw new Error("Account clock is not ready");
+  const elapsed = performance.now() - clock.tick;
+  return { ...clock.value, serverNow: new Date(Date.parse(clock.value.serverNow) + elapsed).toISOString(), today: accountDate(clock.value, elapsed) };
+}
 export function getTodayString() {
   if (!clock) throw new Error("Account clock is not ready");
   return accountDate(clock.value, performance.now() - clock.tick);

@@ -82,6 +82,7 @@ export class CompanionClient {
     path: string,
     body?: unknown,
     account?: string,
+    manageSession = true,
   ): Promise<T> {
     // api.jace-s.com 기준 경로(/auth/session)만 받는다. 절대 주소나 상대 경로는 거부한다
     if (!/^\/[a-z]/.test(path)) throw new Error("Invalid API path");
@@ -125,14 +126,14 @@ export class CompanionClient {
       if (match)
         next[match[1] as keyof Credentials] = decodeURIComponent(match[2]);
     }
-    if (!this.browser && next.session && next.csrf) {
+    if (manageSession && !this.browser && next.session && next.csrf && (next.session !== this.credentials?.session || next.csrf !== this.credentials?.csrf)) {
       this.credentials = next as Credentials;
       await this.store.write(JSON.stringify(this.credentials));
     }
-    if (response.status === 401) { await this.clear(); this.onUnauthenticated?.(); }
+    if (manageSession && response.status === 401) { await this.clear(); this.onUnauthenticated?.(); }
     const payload =
       response.status === 204 ? null : await response.json().catch(() => null);
-    if (this.browser && typeof payload?.csrfToken === "string") this.csrfToken = payload.csrfToken;
+    if (manageSession && this.browser && typeof payload?.csrfToken === "string") this.csrfToken = payload.csrfToken;
     if (!response.ok)
       throw new ApiError(
         response.status,
@@ -143,29 +144,68 @@ export class CompanionClient {
   }
   /** Restore and validate a saved session before exposing any account data. */
   restore(): Promise<User | null> {
-    return this.serialize(async () => {
-      if (!this.browser) {
-        const saved = await this.store.read();
-        if (!saved) return null;
-        try {
-          const value = JSON.parse(saved);
-          if (!value.session || !value.csrf) throw new Error("Invalid session");
-          this.credentials = value;
-        } catch {
-          await this.clear();
-          return null;
-        }
-      }
+    return this.serialize(async () => await this.prepareRestore() ? this.restoreUser() : null);
+  }
+
+  private async prepareRestore(): Promise<boolean> {
+    if (!this.browser) {
+      const saved = await this.store.read();
+      if (!saved) return false;
       try {
-        const result = await this.request<{ user: User }>("/auth/session");
-        this.user = result.user;
-        return result.user;
-      } catch (error) {
-        if (error instanceof ApiError && error.status === 401) return null;
-        throw error;
+        const value = JSON.parse(saved);
+        if (!value.session || !value.csrf) throw new Error("Invalid session");
+        this.credentials = value;
+      } catch {
+        await this.clear();
+        return false;
       }
+    }
+    return true;
+  }
+
+  private async restoreUser(): Promise<User | null> {
+    try {
+      const result = await this.request<{ user: User }>("/auth/session");
+      this.user = result.user;
+      return result.user;
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 401) return null;
+      throw error;
+    }
+  }
+
+  /** Start read-only requests together while session changes remain serialized. */
+  startStudy<T extends readonly unknown[]>(routes: { [K in keyof T]: string }, knownUser?: User) {
+    return this.serialize(async () => {
+      if (!knownUser && !await this.prepareRestore()) return null;
+      const session = knownUser ? Promise.resolve(knownUser) : this.restoreUser();
+      type Owner = { userId: string };
+      type Access = Owner & { canUse: boolean; mustChangePassword: boolean };
+      const accessPath = "/app-access/" + this.app;
+      const paths = [accessPath, "/auth/clock", ...routes.map(route => this.route(route))];
+      const read = (path: string, account?: string) => this.request<Owner>(path, undefined, account, false);
+      const first = Promise.allSettled(paths.map(path => read(path)));
+      const user = await session;
+      if (!user || user.mustChangePassword) return user && { user, study: null };
+      if (this.user?.id !== user.id) throw new ApiError(403, "ACCOUNT_CHANGED");
+      const values = await Promise.all((await first).map(async (entry, index) => {
+        if (entry.status === "fulfilled" && entry.value.userId === user.id) return entry.value;
+        if (entry.status === "rejected" && (!(entry.reason instanceof ApiError) || entry.reason.status !== 401)) throw entry.reason;
+        // Session renewal can invalidate the cookie sent with the initial reads.
+        const value = await read(paths[index], index > 1 ? user.id : undefined);
+        if (value.userId !== user.id) throw new ApiError(403, "ACCOUNT_CHANGED");
+        return value;
+      })).catch(async error => {
+        if (error instanceof ApiError && error.status === 401) { await this.clear(); this.onUnauthenticated?.(); }
+        throw error;
+      });
+      const access = values[0] as Access;
+      if (access.mustChangePassword) throw new ApiError(403, "PASSWORD_CHANGE_REQUIRED");
+      if (!access.canUse) throw new ApiError(403, "APP_ACCESS_DENIED");
+      return { user, study: { clock: values[1] as Owner & Clock, data: values.slice(2) as unknown as T } };
     });
   }
+
   /** Authenticate using the existing account API; plaintext passwords are never persisted. */
   login(username: string, password: string, remember = true): Promise<User> {
     return this.serialize(async () => {
@@ -284,8 +324,8 @@ export class CompanionClient {
     return this.serialize(() => this.request<Clock>("/auth/clock"));
   }
   /** Read a companion route with the currently validated session. */
-  get<T>(suffix: string): Promise<T> {
-    return this.serialize(() => this.request<T>(this.route(suffix)));
+  get<T>(suffix: string, account?: string, query?: Record<string, string>): Promise<T> {
+    return this.serialize(() => this.request<T>(this.route(suffix, query), undefined, account));
   }
   /** Posts public feedback with this product's canonical identity through the current session. */
   submitFeedback(content: string): Promise<{ id: number }> {
@@ -330,10 +370,10 @@ export class CompanionClient {
       },
     };
   }
-  private route(suffix: string) {
+  private route(suffix: string, query?: Record<string, string>) {
     if (!/^[a-z-]+(?:\/[a-z-]+)?$/.test(suffix))
       throw new Error("Invalid companion route");
-    return "/companions/" + this.app + "/" + suffix;
+    return "/companions/" + this.app + "/" + suffix + (query ? "?" + new URLSearchParams(query) : "");
   }
 }
 /** Project server time forward using monotonic elapsed time and the account zone. */

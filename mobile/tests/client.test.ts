@@ -20,6 +20,38 @@ function response(body: unknown, status = 200, cookies: string[] = []) {
   });
 }
 const user = { id: "account-a", username: "a" };
+test("startup sends study reads before session settles and retries only mismatched data", async () => {
+  let resolveSession!: (value: Response) => void;
+  const session = new Promise<Response>(resolve => { resolveSession = resolve; });
+  const paths: string[] = [];
+  const client = new CompanionClient("https://api.jace-s.com", "japanese", memory(), (async (url, init) => {
+    const path = new URL(String(url)).pathname;
+    paths.push(path);
+    if (path === "/auth/session") return session;
+    const account = new Headers(init?.headers).get("x-companion-user");
+    if (path.endsWith("/curriculum")) return response({ userId: account ?? "another-account", files: account ? { safe: true } : { other: true } });
+    return response({ userId: user.id, canUse: true, today: "2026-11-19" });
+  }) as typeof fetch, true);
+  const startup = client.startStudy<[{ files: Record<string, boolean> }]>(["curriculum"]);
+  await new Promise(resolve => setTimeout(resolve, 0));
+  assert.equal(paths.length, 4);
+  resolveSession(response({ user }));
+  const result = await startup;
+  assert.equal(result?.user.id, user.id);
+  assert.deepEqual(result?.study?.data[0].files, { safe: true });
+  assert.equal(paths.filter(path => path.endsWith("/curriculum")).length, 2);
+});
+
+test("startup rejects a peer showing a different account after a guarded retry", async () => {
+  const client = new CompanionClient("https://api.jace-s.com", "japanese", memory(), (async (url) => {
+    const path = new URL(String(url)).pathname;
+    if (path === "/auth/session") return response({ user });
+    if (path.endsWith("/curriculum")) return response({ userId: "another-account", files: {} });
+    return response({ userId: user.id, canUse: true, today: "2026-11-19" });
+  }) as typeof fetch, true);
+  await assert.rejects(client.startStudy<[{ files: Record<string, unknown> }]>(["curriculum"]), { code: "ACCOUNT_CHANGED" });
+});
+
 test("browser restores the shared session and sends response CSRF without exposing cookies", async () => {
   const store = memory();
   const calls: { url: string; init: RequestInit }[] = [];

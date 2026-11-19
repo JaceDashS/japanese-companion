@@ -1,10 +1,11 @@
+import { getStorageScope } from "../../.generated/product/shared/controllers/data/storageScope.js";
 import { useEffect, useRef, useState } from "react";
 import { toLearningPathKey } from "../../.generated/product/shared/controllers/domain/learningPath.js";
 import type { StudyState, SessionView, StudyItem, LearningPath } from "../../../shared/domain/studyTypes";
-import { buildAppState, listAvailableBooks, loadCurriculumFiles } from "../../.generated/product/shared/controllers/domain/curriculumFiles.js";
+import { buildAppState } from "../../.generated/product/shared/controllers/domain/curriculumFiles.js";
 import { useHomeDashboardData } from "../../.generated/product/shared/controllers/domain/homeDashboard.js";
 import { useLearningPlanSync, updateDailyLearningCount } from "../../.generated/product/shared/controllers/domain/learningPlanSync.js";
-import { createSourcePersistence, useSourceWriteQueue } from "../../.generated/product/shared/controllers/domain/sourcePersistence.js";
+import { createSourcePersistence, readPendingSourceWrites, useSourceWriteQueue } from "../../.generated/product/shared/controllers/domain/sourcePersistence.js";
 import { createProgressActions } from "../../.generated/product/shared/controllers/domain/progressActions.js";
 import { createSessionController } from "../../.generated/product/shared/controllers/domain/sessionController.js";
 import type { Completion } from "./CompletionHud";
@@ -19,8 +20,8 @@ import { mergeCurriculumFromSource, patchMemoInCurriculumFiles } from "../../.ge
 import { japaneseMemoKey } from "../../.generated/product/shared/controllers/domain/expression.js";
 import { applyDayDecompositionImport, resetDayDecompositions, resetDayProblems } from "../../.generated/product/shared/controllers/domain/dayClipboardImporter.js";
 import { buildDayWordCopyPayload } from "../../.generated/product/shared/controllers/domain/dayClipboardHelpers.js";
-import { apiFetch, apiUrl, hydrateState, loadView, saveState } from "./runtime";
-import { readAppPreferences, writeAppPreferences } from "../../.generated/product/shared/controllers/domain/appPreferences.js";
+import { apiFetch, client, hydrateState, loadView, saveState } from "./runtime";
+import { writeAppPreferences } from "../../.generated/product/shared/controllers/domain/appPreferences.js";
 import { identifyStudyState, displayItemId } from "./identity";
 import { loadMemos, type MemoEntry } from "./japaneseWords";
 
@@ -34,32 +35,86 @@ export type Preferences = {
 function buildState(book: string, files: Record<string, unknown>, dailyNewLearningCount: number): StudyState {
   return identifyStudyState({ ...buildAppState(book, files, { dailyNewLearningCount }), ...loadView(book) });
 }
-export type BootData = { files: Record<string, unknown>; preferences: Preferences; book: string };
+type AvailableBook = { id: string; title: string };
+type Curriculum = { files: Record<string, unknown>; book: string; books: AvailableBook[] };
+export type BootData = Curriculum & { preferences: Preferences };
 
-/** Load server content and the selected book's account-scoped cache before mounting study hooks. */
-export async function loadStudy(): Promise<BootData> {
-  const [files, rawPreferences] = await Promise.all([loadCurriculumFiles(), readAppPreferences()]);
-  const preferences = rawPreferences as Preferences;
-  const books = listAvailableBooks(files);
-  const book = books.find((item: any) => item.id === preferences.selectedBookId)?.id ?? books.find((item: any) => item.id === "jlpt-one-book-n1")?.id ?? books[0]?.id;
-  if (!book) throw new Error("커리큘럼을 찾을 수 없습니다.");
-  await hydrateState(book);
-  return { files, preferences, book };
+function readCurriculum(book?: string) {
+  return client.get<Curriculum>("curriculum", getStorageScope(), book ? { book } : undefined);
+}
+
+export async function loadStudy(data: Curriculum, { preferences }: { preferences: Preferences }): Promise<BootData> {
+  await hydrateState(data.book);
+  return { ...data, preferences, files: await applyQueuedWrites(data.files) };
+}
+
+/** Replay the account FIFO on the loaded book; retain the unmodified server payload for disk. */
+async function applyQueuedWrites(files: Record<string, unknown>) {
+  const writes = await readPendingSourceWrites(apiFetch);
+  if (!writes.length) return files;
+  let next = JSON.parse(JSON.stringify(files)) as Record<string, unknown>;
+  const itemFields = new Set(["memo", "memoPersonal", "decomposition", "memoDecomposition", "problem", "lastResult", "lastAttemptDate"]);
+  const dayFields = new Set(["stage", "stageCompleteDate", "nextReviewDate", "lastAttemptDate"]);
+  type Item = { expression?: string; [key: string]: unknown };
+  type Day = { items?: Item[]; [key: string]: unknown };
+  for (const write of writes) {
+    const book = next[String(write?.sourcePath)] as { days?: { day?: Day[] }[] } | undefined;
+    const day = book?.days?.[Number(write?.unitPath ?? 0)]?.day?.[Number(write?.dayIndex)];
+    if (!day) continue;
+    if (Array.isArray(write.items) && write.day) {
+      for (const field of dayFields) if (Object.hasOwn(write.day, field)) day[field] = write.day[field];
+      for (const result of write.items) {
+        const item = day.items?.[Number(result?.itemIndex)];
+        if (item) item.lastResult = result.lastResult;
+      }
+    } else if (write.targetType === "day" && dayFields.has(write.field)) {
+      day[write.field] = write.value;
+    } else if (itemFields.has(write.field)) {
+      const item = day.items?.[Number(write.itemIndex)];
+      if (!item) continue;
+      if (write.field === "memo" || write.field === "memoPersonal") {
+        if (item.expression) next = patchMemoInCurriculumFiles(next, item.expression, String(write.value ?? ""));
+      } else if (write.field === "decomposition" || write.field === "memoDecomposition") {
+        item.decomposition = write.value;
+        item.memoDecomposition = write.value;
+      } else {
+        item[write.field] = write.value;
+      }
+    }
+  }
+  return next;
 }
 
 /** Share the existing web study rules, source-write queue and controllers across Expo platforms. */
-export function useStudyModel(initial: BootData, today: string, notify: (text: string, tone?: string) => void) {
+export function useStudyModel(initial: BootData, today: string, notify: (text: string, tone?: string) => void, verified: boolean, cache: (data: Curriculum, prefs: Preferences) => void) {
   const [files, setFiles] = useState(initial.files);
   const [book, setBook] = useState(initial.book);
+  const [books, setBooks] = useState(initial.books);
+  const selecting = useRef(false);
+  const [switching, setSwitching] = useState(false);
   const [state, setState] = useState<StudyState>(() => buildState(book, files, initial.preferences.dailyNewLearningCount ?? 1));
   const [session, setSession] = useState<SessionView | null>(null);
   const [editor, setEditor] = useState({ open: false, draft: createProblemDraft(null), error: "" });
+  const activeBook = useRef(book);
+  activeBook.current = book;
+  const inSession = useRef(false);
+  inSession.current = Boolean(session);
+  const deferred = useRef<{ book: string; files: Curriculum["files"]; books: AvailableBook[] } | null>(null);
+  useEffect(() => {
+    if (session || !deferred.current) return;
+    const next = deferred.current;
+    deferred.current = null;
+    if (next.book !== book) return;
+    setBooks(next.books);
+    setFiles(next.files);
+    setState(previous => identifyStudyState({ ...previous, curriculum: mergeCurriculumFromSource(previous.curriculum, next.files) }));
+  }, [book, session]);
   const [srs, setSrs] = useState(() => normalizeSrsSettings(initial.preferences.srs));
   const [plan, setPlan] = useState(() => ({ start: initial.preferences.planRange?.start ?? today, end: initial.preferences.planRange?.end ?? (today.slice(0, 4) + "-06-01" >= today ? today.slice(0, 4) + "-06-01" : (Number(today.slice(0, 4)) + 1) + "-06-01") }));
   const [memos, setMemos] = useState<MemoEntry[]>([]);
   const reloadMemos = () => loadMemos().then(setMemos).catch((error) => notify(String(error), "error"));
-  useEffect(() => { void reloadMemos(); }, []);
-  const queue = useSourceWriteQueue(apiFetch);
+  useEffect(() => { if (verified) void reloadMemos(); }, [verified]);
+  const queue = useSourceWriteQueue(apiFetch, verified);
   const stalled = useRef(new Set<(error: Error) => void>());
   const stalledError = () => new Error("저장하지 못한 학습 기록이 있어 다시 시도하는 중입니다. 연결을 확인한 뒤 잠시 후 다시 시도해 주세요.");
   const retrying = queue.items.some((item: { status: string }) => item.status === "retrying");
@@ -78,34 +133,42 @@ export function useStudyModel(initial: BootData, today: string, notify: (text: s
   };
   const persistence = createSourcePersistence(apiFetch);
   useLearningPlanSync({ setState, state, today });
-  useEffect(() => { saveState(state, book); }, [state, book]);
+  useEffect(() => { if (verified) saveState(state, book); }, [state, book, verified]);
   const dashboard = useHomeDashboardData({ dailyNewLearningCount: state.dailyNewLearningCount ?? 1, planRange: plan, srsSettings: srs, state, today });
   const selection = useSessionSelection({ getPathDay, isQuizTarget, session, stateCurriculum: state.curriculum });
   const { currentItem, sessionDay, sessionItems } = selection;
   const progress = createProgressActions({ session, stateCurriculum: state.curriculum, today, setState, getPathDay, replaceDay, ...persistence });
   const refresh = async () => {
+    if (selecting.current) return;
     await waitForSaves();
-    const next = await loadCurriculumFiles();
-    setFiles(next);
-    setState((previous) => identifyStudyState({ ...previous, curriculum: mergeCurriculumFromSource(previous.curriculum, next) }));
+    const next = await readCurriculum(book);
+    if (selecting.current || activeBook.current !== next.book) return;
+    const prefs = { ...initial.preferences, selectedBookId: next.book, dailyNewLearningCount: state.dailyNewLearningCount, planRange: plan, srs };
+    cache(next, prefs);
+    const fresh = await applyQueuedWrites(next.files);
+    if (activeBook.current !== next.book || selecting.current) return;
+    if (inSession.current) { deferred.current = { ...next, files: fresh }; return; }
+    setBooks(next.books);
+    setFiles(fresh);
+    setState(previous => identifyStudyState({ ...previous, curriculum: mergeCurriculumFromSource(previous.curriculum, fresh) }));
     void reloadMemos();
   };
-  /** Reloads the textbooks after a personal book changed; a deleted current book falls back to the default. */
+
+  /** Reload the catalog and the open textbook after a personal book changes. */
   const reloadBooks = async () => {
     await waitForSaves();
-    const next = await loadCurriculumFiles();
-    setFiles(next);
-    const available = listAvailableBooks(next);
-    if (available.some((item: any) => item.id === book)) {
-      setState((previous) => buildState(book, next, previous.dailyNewLearningCount ?? 1));
-      return;
+    const { books: available } = await client.get<{ books: AvailableBook[] }>("books", getStorageScope());
+    const retained = available.some(entry => entry.id === book);
+    const next = await readCurriculum(retained ? book : undefined);
+    await hydrateState(next.book);
+    setBooks(next.books);
+    setFiles(next.files);
+    setState(previous => buildState(next.book, next.files, previous.dailyNewLearningCount ?? 1));
+    if (!retained) {
+      setBook(next.book);
+      setSession(null);
+      await writeAppPreferences({ selectedBookId: next.book });
     }
-    const fallback = available.find((item: any) => item.id === "jlpt-one-book-n1")?.id ?? available[0]?.id;
-    if (!fallback) return;
-    await hydrateState(fallback);
-    setState(buildState(fallback, next, state.dailyNewLearningCount ?? 1));
-    setBook(fallback); setSession(null);
-    await writeAppPreferences({ selectedBookId: fallback });
   };
   const syncMemoState = (expression: string, value: string, target?: { reading?: string; meaningKo?: string }) => {
     const key = japaneseMemoKey(expression);
@@ -170,16 +233,29 @@ export function useStudyModel(initial: BootData, today: string, notify: (text: s
   }, [currentItem?.id, currentItem?.problem, session?.phase, session?.index]);
   const mutateOptions = (path: LearningPath) => ({ getDisplayDayIndex, isQuizTarget, persistSourceField: persistence.persistSourceField, replaceDay, setState, showToast: notify, targetDay: getPathDay(state.curriculum, path), targetPath: path });
   return {
-    state, files, book, books: listAvailableBooks(files), session, setSession, editor, setEditor,
+    state, files, book, books, switching, session, setSession, editor, setEditor,
     srs, plan, dashboard, queue, currentItem: currentItem as StudyItem | null, sessionDay, sessionItems,
     ...controller, ...input, ...progress, ...openers, markDayAttemptNow, updateLastResultNow, recentOpened, completion, clearCompletion: () => setCompletion(null), updateMemo, applyMemo, memos, reloadBooks, getDisplayItemId: displayItemId, goHome, refresh,
     async switchBook(next: string) {
-      if (next === book) return;
-      await waitForSaves();
-      await hydrateState(next);
-      setState(buildState(next, files, state.dailyNewLearningCount ?? 1));
-      setBook(next); setSession(null);
-      await writeAppPreferences({ selectedBookId: next, dailyNewLearningCount: state.dailyNewLearningCount ?? 1 });
+      if (next === book || selecting.current) return;
+      selecting.current = true;
+      setSwitching(true);
+      try {
+        await waitForSaves();
+        const data = await readCurriculum(next);
+        await hydrateState(data.book);
+        const { preferences } = await client.post<{ preferences: Preferences }>("app-preferences", { preferences: { selectedBookId: data.book, dailyNewLearningCount: state.dailyNewLearningCount ?? 1 } }, getStorageScope());
+        cache(data, preferences);
+        const fresh = await applyQueuedWrites(data.files);
+        setBooks(data.books);
+        setFiles(fresh);
+        setState(buildState(data.book, fresh, state.dailyNewLearningCount ?? 1));
+        setBook(data.book);
+        setSession(null);
+      } finally {
+        setSwitching(false);
+        selecting.current = false;
+      }
     },
     updatePlan(next: { start: string; end: string }) { setPlan(next); void writeAppPreferences({ planRange: next }); },
     setSideWidth(value: number) { setState((previous) => previous.studyDrawerWidth === value ? previous : { ...previous, studyDrawerWidth: Math.max(260, Math.min(560, value)) }); },
