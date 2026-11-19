@@ -47,9 +47,10 @@ function resolveFile(relativePath) {
 
 function serveFile(res, filePath, method) {
   const filename = path.basename(filePath);
-  const revalidate = filename === "index.html" || filename.startsWith("companion-");
+  const liveWorkerFile = ["companion-sw.js", "companion-update.js", "companion-update.css"].includes(filename);
+  const revalidate = filename === "index.html" || filename === "companion-assets.json";
   // 빌드 결과의 assets/는 파일 이름에 해시가 붙어 오래 캐시해도 되고, index.html은 매번 새로 확인한다.
-  const cacheControl = revalidate ? "no-cache" : (filePath.includes(`${path.sep}assets${path.sep}`) || filePath.includes(`${path.sep}_expo${path.sep}static${path.sep}`)) ? "public, max-age=31536000, immutable" : "public, max-age=3600";
+  const cacheControl = liveWorkerFile ? "private, no-store" : revalidate ? "no-cache" : (filePath.includes(`${path.sep}assets${path.sep}`) || filePath.includes(`${path.sep}_expo${path.sep}static${path.sep}`)) ? "public, max-age=31536000, immutable" : "public, max-age=3600";
   const headers = {
     "Content-Type": contentTypes[path.extname(filePath).toLowerCase()] ?? "application/octet-stream",
     "Cache-Control": cacheControl,
