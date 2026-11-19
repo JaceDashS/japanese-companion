@@ -54,6 +54,7 @@ function serveFile(res, filePath, method) {
   const headers = {
     "Content-Type": contentTypes[path.extname(filePath).toLowerCase()] ?? "application/octet-stream",
     "Cache-Control": cacheControl,
+    ...(filename === "index.html" ? { "X-Robots-Tag": "noindex" } : {}),
     ...(filename === "companion-assets.json" ? { "Access-Control-Allow-Origin": "*" } : {}),
   };
   if (method === "HEAD") return send(res, 200, headers);

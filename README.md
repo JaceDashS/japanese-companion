@@ -1,5 +1,7 @@
 # Japanese Companion
 
+[공개 앱 소개](https://jace-s.com/apps/japanese-companion)
+
 One Expo React Native screen codebase for web and Android. Screens live in `mobile/src/unified/`; learning rules and controllers live in `shared/`. The platform owns authentication and account records.
 
 - [Documentation](docs/00-index.md)

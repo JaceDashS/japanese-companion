@@ -4,7 +4,10 @@ import { join } from "node:path";
 
 const directory = process.argv[2];
 const indexPath = join(directory, "index.html");
-const original = await readFile(indexPath, "utf8");
+const original = (await readFile(indexPath, "utf8"))
+  .replace("</head>", '<meta name="robots" content="noindex"></head>')
+  .replace("</body>", '<noscript><p><a href="https://jace-s.com/apps/japanese-companion">앱 소개 · App guide</a></p></noscript></body>');
+await writeFile(indexPath, original);
 const scripts = [...original.matchAll(/<script\b[^>]*\bsrc="([^"]+\.js)"[^>]*>/g)]
   .map(match => match[1]).filter(url => /^(?:\/[^/]+)*\/_expo\/static\/[\w./-]+\.js$/.test(url));
 if (!scripts.length) throw new Error("Expo web export has no hashed scripts");
