@@ -7,11 +7,11 @@ import type { StudyModel } from "./useStudyModel";
 import { client, clearState } from "./runtime";
 import { confirmAction } from "./platform";
 import { Btn, Card, Input, Label, layout, Segment, T, Theme } from "./ui";
-import { SITE_ORIGIN } from "./config";
+import { SITE_ORIGIN, UNIFIED_APP_URL } from "./config";
 
 export type Display = { theme: "dark" | "light"; device: "auto" | "phone" | "pc" };
 /** Shared account, scheduling, display, backup and source-write retry settings. */
-export function SettingsScreen({ model, display, setDisplay, notify, onLogout, onReset, phone }: { phone: boolean; model: StudyModel; display: Display; setDisplay: (next: Display) => void; notify: (text: string, tone?: string) => void; onLogout: () => Promise<void>; onReset: () => void }) {
+export function SettingsScreen({ model, display, setDisplay, notify, onLogout, onReset, phone, hideUnifiedAppLink }: { phone: boolean; model: StudyModel; display: Display; setDisplay: (next: Display) => void; notify: (text: string, tone?: string) => void; onLogout: () => Promise<void>; onReset: () => void; hideUnifiedAppLink?: boolean }) {
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [account, setAccount] = useState<User | null>(null);
   const [error, setError] = useState("");
@@ -60,6 +60,7 @@ export function SettingsScreen({ model, display, setDisplay, notify, onLogout, o
         <Btn title="개발자에 대해" style={{ flex: 1 }} onPress={() => { const url = SITE_ORIGIN + "/about"; if (Platform.OS === "web" && typeof window !== "undefined") window.open(url, "_blank", "noopener,noreferrer"); else void Linking.openURL(url); }} testID="about-developer" />
         <Btn title="피드백" style={{ flex: 1 }} onPress={() => setFeedbackOpen(true)} testID="feedback" />
       </View>
+      {!hideUnifiedAppLink && <Btn title="Education Companion 통합 앱" onPress={() => { if (Platform.OS === "web" && typeof window !== "undefined") window.open(UNIFIED_APP_URL, "_blank", "noopener,noreferrer"); else void Linking.openURL(UNIFIED_APP_URL); }} testID="unified-app-link" />}
       {Platform.OS === "web" && <T size={13.1} tone="muted">같은 브라우저의 다른 jace-s 앱과 메인 사이트도 함께 로그아웃됩니다.</T>}
     </Card>
     {!!error && <Label error>{error}</Label>}

@@ -30,8 +30,23 @@ import { CompletionHud } from "./CompletionHud";
 type Gate = { kind: "checking" } | { kind: "login" } | { kind: "password" } | { kind: "blocked" } | { kind: "ready"; user: User; boot: BootData; verified: boolean };
 type CachedStudy = { user: User; clock: Clock; data: Parameters<typeof loadStudy> };
 
+export interface CompanionHost {
+  embedded?: boolean;
+  active?: boolean;
+  initialUser?: User;
+  onOpenHub?: () => void;
+  onLogout?: () => Promise<void>;
+  onExpired?: () => void;
+  onStatusChange?: (status: { state: "loading" | "ready" | "error"; dueCount?: number; summary?: string }) => void;
+  renderAdSlot?: (placement: string) => React.ReactNode;
+}
+
 /** Common Expo root; each account gets a new study screen lifecycle. */
-export default function App() {
+export function JapaneseCompanionApp({ host }: { host?: CompanionHost } = {}) {
+  const embedded = Boolean(host?.embedded);
+  const hostActive = host?.active !== false;
+  const hostRef = useRef(host);
+  hostRef.current = host;
   const [gate, setGate] = useState<Gate>({ kind: "checking" });
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -80,21 +95,54 @@ export default function App() {
       setError(cause instanceof ApiError ? messages[cause.code] ?? cause.message : String(cause)); throw cause;
     } finally { working.current = false; setBusy(false); }
   }, []);
-  useEffect(() => { void action(async () => enter()).catch(() => undefined); }, [action, enter]);
-  useEffect(() => listenForExpiry(() => { void clearSnapshot(); setStorageScope(""); setGate({ kind: "login" }); setError("로그인이 만료되었습니다. 다시 로그인해 주세요."); }), []);
-  const logout = () => action(async () => { await client.logout(); await clearSnapshot(gate.kind === "ready" ? gate.user.id : undefined); setStorageScope(""); setGate({ kind: "login" }); });
-  return <SafeAreaProvider><SafeAreaView style={[{ flex: 1, backgroundColor: palettes.dark.bg }, gradient(`radial-gradient(900px 480px at 85% -10%, ${palettes.dark.glow}, transparent 70%)`)]}><StatusBar style="light" />
-    {gate.kind !== "ready" && <><BrowserTheme scheme="dark" /><Notices /></>}
+  useEffect(() => { void action(async () => enter(hostRef.current?.initialUser)).catch(() => undefined); }, [action, enter]);
+  useEffect(() => listenForExpiry(() => {
+    void clearSnapshot();
+    setStorageScope("");
+    if (hostRef.current?.onExpired) { hostRef.current.onExpired(); return; }
+    setGate({ kind: "login" });
+    setError("로그인이 만료되었습니다. 다시 로그인해 주세요.");
+  }), []);
+  useEffect(() => {
+    const report = hostRef.current?.onStatusChange;
+    if (!report) return;
+    if (gate.kind === "checking") report({ state: "loading" });
+    else if (gate.kind === "blocked") report({ state: "error", summary: error || "접근 권한이 없습니다." });
+    else if (gate.kind === "login" || gate.kind === "password") report({ state: "error", summary: "로그인이 필요합니다." });
+  }, [gate.kind, error]);
+  const logout = () => action(async () => {
+    if (hostRef.current?.onLogout) {
+      await clearSnapshot(gate.kind === "ready" ? gate.user.id : undefined);
+      setStorageScope("");
+      await hostRef.current.onLogout();
+      return;
+    }
+    await client.logout();
+    await clearSnapshot(gate.kind === "ready" ? gate.user.id : undefined);
+    setStorageScope("");
+    setGate({ kind: "login" });
+  });
+  const inner = <View style={[{ flex: 1, backgroundColor: palettes.dark.bg }, gradient(`radial-gradient(900px 480px at 85% -10%, ${palettes.dark.glow}, transparent 70%)`)]}>{hostActive && <StatusBar style="light" />}
+    {gate.kind !== "ready" && <>{hostActive && <BrowserTheme scheme="dark" />}<Notices /></>}
     {gate.kind === "checking" && <>{busy || !error ? <StudySkeleton /> : <View style={layout.body}><Label error>{error}</Label><Action title="다시 불러오기" onPress={() => void action(async () => enter()).catch(() => undefined)} /></View>}</>}
     {gate.kind === "login" && <LoginScreen name="Japanese Companion" busy={busy} error={error} remember={remember} onRememberChange={setRemember} onLogin={(username, password) => void action(async () => enter(await client.login(username, password, remember))).catch(() => undefined)} onDevLogin={__DEV__ ? () => void action(async () => enter(await client.devLogin())).catch(() => undefined) : undefined}><GoogleButton client={client} remember={remember} disabled={busy} onBusyChange={setBusy} onLoggedIn={(user) => action(() => enter(user))} /></LoginScreen>}
     {gate.kind === "password" && <PasswordScreen busy={busy} error={error} onSave={(a, b) => void action(async () => { await client.changePassword(a, b); await enter(); }).catch(() => undefined)} onLogout={() => void logout().catch(() => undefined)} />}
     {gate.kind === "blocked" && <View style={layout.body}><Label error>{error}</Label><Action title="메인 페이지" onPress={() => void Linking.openURL(SITE_ORIGIN)} /><Action title="로그아웃" onPress={() => void logout().catch(() => undefined)} /></View>}
     {gate.kind === "ready" && !gate.verified && <Action title="연결 다시 확인" onPress={() => void action(() => enter()).catch(() => undefined)} />}
-    {gate.kind === "ready" && <StudyApp key={gate.user.id + ":" + revision} boot={gate.boot} user={gate.user} verified={gate.verified} onLogout={logout} onReset={() => void action(async () => enter(gate.user)).catch(() => undefined)} />}
-  </SafeAreaView></SafeAreaProvider>;
+    {gate.kind === "ready" && <StudyApp key={gate.user.id + ":" + revision} boot={gate.boot} user={gate.user} verified={gate.verified} host={host} onLogout={logout} onReset={() => void action(async () => enter(gate.user)).catch(() => undefined)} />}
+  </View>;
+  if (embedded) return inner;
+  return <SafeAreaProvider><SafeAreaView style={{ flex: 1, backgroundColor: palettes.dark.bg }}>{inner}</SafeAreaView></SafeAreaProvider>;
 }
 
-function StudyApp({ boot, user, verified, onLogout, onReset }: { boot: BootData; user: User; verified: boolean; onLogout: () => Promise<void>; onReset: () => void }) {
+export default function App() {
+  return <JapaneseCompanionApp />;
+}
+
+function StudyApp({ boot, user, verified, host, onLogout, onReset }: { boot: BootData; user: User; verified: boolean; host?: CompanionHost; onLogout: () => Promise<void>; onReset: () => void }) {
+  const hostActive = host?.active !== false;
+  const hostRef = useRef(host);
+  hostRef.current = host;
   useCompanionReady(true);
   const [section, setSection] = useState<HeaderSection>("vocabulary");
   const [tab, setTab] = useState<"today" | "days" | "progress" | "settings">("today");
@@ -108,7 +156,7 @@ function StudyApp({ boot, user, verified, onLogout, onReset }: { boot: BootData;
   }, [user]);
   const model = useStudyModel(boot, today, notify, verified, cache);
   const library = useReadingLibrary(readingApi, notify, verified);
-  useHomeFocus(verified && !model.session, model.refresh, (error) => notify(String(error), "error"));
+  useHomeFocus(hostActive && verified && !model.session, model.refresh, (error) => notify(String(error), "error"));
   // The account's last section opens again: a visit that ended in the bookshelf starts there.
   const sectionRestored = useRef(false);
   useEffect(() => {
@@ -133,16 +181,19 @@ function StudyApp({ boot, user, verified, onLogout, onReset }: { boot: BootData;
   }, [notify, verified]);
   const setDisplay = (next: Display) => { updateDisplay(next); void storage.write("jpc-theme-v1", next.theme).catch(() => undefined); void storage.write("jpc-device-mode-v1", next.device).catch(() => undefined); };
   const dueCount = model.dashboard.reviewDue.length;
+  useEffect(() => {
+    hostRef.current?.onStatusChange?.({ state: "ready", dueCount, summary: dueCount > 0 ? `복습 ${dueCount} Day` : "오늘 복습 완료" });
+  }, [dueCount]);
   useMainReturn({
-    active: !model.session && !library.openId && tab !== "today",
+    active: hostActive && !model.session && !library.openId && tab !== "today",
     dirty: false,
     subPath: tab !== "today" ? tab : undefined,
     onReturn: () => setTab("today"),
   });
-  return <Theme.Provider value={c}><Device.Provider value={{ phone: isPhone }}><View ref={node => { if (Platform.OS === "web" && node instanceof HTMLElement) node.inert = !verified; }} accessibilityElementsHidden={!verified} importantForAccessibility={!verified ? "no-hide-descendants" : "auto"} pointerEvents={!verified ? "none" : "auto"} style={[{ flex: 1, backgroundColor: c.bg }, gradient(`radial-gradient(900px 480px at 85% -10%, ${c.glow}, transparent 70%)`)]}><BrowserTheme scheme={display.theme} /><StatusBar style={display.theme === "light" ? "dark" : "light"} /><Notices /><StudyProgress pending={model.switching} />
+  return <Theme.Provider value={c}><Device.Provider value={{ phone: isPhone }}><View ref={node => { if (Platform.OS === "web" && node instanceof HTMLElement) node.inert = !verified; }} accessibilityElementsHidden={!verified} importantForAccessibility={!verified ? "no-hide-descendants" : "auto"} pointerEvents={!verified ? "none" : "auto"} style={[{ flex: 1, backgroundColor: c.bg }, gradient(`radial-gradient(900px 480px at 85% -10%, ${c.glow}, transparent 70%)`)]}>{hostActive && <BrowserTheme scheme={display.theme} />}{hostActive && <StatusBar style={display.theme === "light" ? "dark" : "light"} />}<Notices /><StudyProgress pending={model.switching} />
     {model.session ? <SessionScreen key={model.session.unitId + ":" + model.session.dayId} model={model} isPhone={isPhone} notify={notify} /> : library.openId ? <ReaderScreen library={library} api={readingApi} language="ja" notify={notify} onNoteSaved={model.applyMemo} /> : <>
-      <Chrome desktop={!isPhone} section={section} onSectionChange={(next) => { changeSection(next); if (tab === "settings") setTab("today"); }} tab={tab} today={today} dueCount={dueCount} onNavigate={setTab} onHome={goHome}>
-        {tab === "settings" ? <SettingsScreen phone={isPhone} model={model} display={display} setDisplay={setDisplay} notify={notify} onLogout={onLogout} onReset={onReset} /> : <HomeScreen model={model} library={library} section={section} tab={tab} today={today} desktop={!isPhone} notify={notify} />}
+      <Chrome desktop={!isPhone} section={section} onSectionChange={(next) => { changeSection(next); if (tab === "settings") setTab("today"); }} tab={tab} today={today} dueCount={dueCount} onNavigate={setTab} onHome={goHome} onOpenHub={host?.onOpenHub} adSlot={tab !== "settings" ? host?.renderAdSlot?.("japanese-bottom") : undefined}>
+        {tab === "settings" ? <SettingsScreen phone={isPhone} model={model} display={display} setDisplay={setDisplay} notify={notify} onLogout={onLogout} onReset={onReset} hideUnifiedAppLink={Boolean(host?.embedded)} /> : <HomeScreen model={model} library={library} section={section} tab={tab} today={today} desktop={!isPhone} notify={notify} />}
       </Chrome>
     </>}
     <CompletionHud completion={model.session ? null : model.completion} today={today} onDone={model.clearCompletion} />
