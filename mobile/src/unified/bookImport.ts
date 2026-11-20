@@ -34,3 +34,148 @@ export function parseBookImport(raw: string): { title: string; body: string } {
   if (!body) throw new Error("JSON에 본문(body)이 없습니다.");
   return { title, body };
 }
+
+export type BookSummary = { id: string; title: string };
+
+export type BookImportDeps<T extends BookSummary> = {
+  books: readonly T[];
+  targetId: string | null;
+  saveBook: (title: string, body: string) => Promise<T>;
+  appendBook: (id: string, body: string) => Promise<T>;
+};
+
+export type BookImportOutcome<T extends BookSummary> =
+  | { ok: true; mode: "created" | "appended"; book: T; status: string }
+  | { ok: false; error: string; text: string; openManual: boolean };
+
+export type WordImportResultShape = {
+  added: number;
+  days: number;
+  excluded: unknown[];
+  invalid: unknown[];
+};
+
+export type WordImportOutcome<R extends WordImportResultShape> =
+  | { ok: true; result: R; text: string }
+  | { ok: false; error: string; text: string; openManual: boolean; result: R | null };
+
+function errorMessage(cause: unknown, fallback: string): string {
+  return cause instanceof Error && cause.message ? cause.message : fallback;
+}
+
+/** Validate, match an existing target/title, and save or append one book JSON batch. */
+export async function importBookJson<T extends BookSummary>(
+  raw: string,
+  deps: BookImportDeps<T>,
+): Promise<BookImportOutcome<T>> {
+  try {
+    const parsed = parseBookImport(raw);
+    const existing =
+      (deps.targetId ? deps.books.find((book) => book.id === deps.targetId) : undefined) ??
+      deps.books.find((book) => book.title.trim() === parsed.title);
+    const book = existing
+      ? await deps.appendBook(existing.id, parsed.body)
+      : await deps.saveBook(parsed.title, parsed.body);
+    return {
+      ok: true,
+      mode: existing ? "appended" : "created",
+      book,
+      status: existing
+        ? `「${book.title}」에 내용을 이어 붙였습니다. 다음 묶음을 계속 추가할 수 있습니다.`
+        : `「${book.title}」을(를) 책장에 추가했습니다. 같은 제목으로 다음 묶음을 계속 추가할 수 있습니다.`,
+    };
+  } catch (cause) {
+    return {
+      ok: false,
+      error: errorMessage(cause, "책을 저장하지 못했습니다."),
+      text: raw,
+      openManual: true,
+    };
+  }
+}
+
+/** Read book JSON from clipboard and immediately validate and save in one step. */
+export async function importBookFromClipboard<T extends BookSummary>(
+  readClipboard: () => Promise<string>,
+  currentText: string,
+  deps: BookImportDeps<T>,
+): Promise<BookImportOutcome<T>> {
+  let clip: string;
+  try {
+    clip = await readClipboard();
+  } catch (cause) {
+    return {
+      ok: false,
+      error: errorMessage(cause, "클립보드를 읽지 못했습니다."),
+      text: currentText,
+      openManual: false,
+    };
+  }
+  if (!clip.trim()) {
+    return {
+      ok: false,
+      error: "클립보드가 비어 있습니다. AI가 출력한 JSON을 먼저 복사하세요.",
+      text: currentText,
+      openManual: false,
+    };
+  }
+  return importBookJson(clip, deps);
+}
+
+/** Validate and save a word JSON batch, preserving raw JSON for manual retry when all items fail. */
+export async function importWordsJson<R extends WordImportResultShape>(
+  raw: string,
+  importFn: (payload: string) => Promise<R>,
+): Promise<WordImportOutcome<R>> {
+  try {
+    const result = await importFn(raw);
+    if (result.added === 0 && result.invalid.length > 0) {
+      return {
+        ok: false,
+        error: "검증에 실패한 단어를 수정한 뒤 다시 시도하세요.",
+        text: raw,
+        openManual: true,
+        result,
+      };
+    }
+    return { ok: true, result, text: "" };
+  } catch (cause) {
+    return {
+      ok: false,
+      error: errorMessage(cause, "단어를 가져오지 못했습니다."),
+      text: raw,
+      openManual: true,
+      result: null,
+    };
+  }
+}
+
+/** Read vocabulary JSON from clipboard and immediately validate and save in one step. */
+export async function importWordsFromClipboard<R extends WordImportResultShape>(
+  readClipboard: () => Promise<string>,
+  currentText: string,
+  importFn: (payload: string) => Promise<R>,
+): Promise<WordImportOutcome<R>> {
+  let clip: string;
+  try {
+    clip = await readClipboard();
+  } catch (cause) {
+    return {
+      ok: false,
+      error: errorMessage(cause, "클립보드를 읽지 못했습니다."),
+      text: currentText,
+      openManual: false,
+      result: null,
+    };
+  }
+  if (!clip.trim()) {
+    return {
+      ok: false,
+      error: "클립보드가 비어 있습니다. AI가 출력한 JSON을 먼저 복사하세요.",
+      text: currentText,
+      openManual: false,
+      result: null,
+    };
+  }
+  return importWordsJson(clip, importFn);
+}

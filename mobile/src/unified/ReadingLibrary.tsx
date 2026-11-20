@@ -1,8 +1,8 @@
 import { StudyMarkdown } from "../StudyMarkdown";
 import { client } from "./runtime";
-import { ActionDropdown, type DropdownAction } from "./ActionDropdown";
+import { ActionDropdown } from "./ActionDropdown";
 import { BookSelect } from "./BookSelect";
-import { bookImportPrompt, parseBookImport } from "./bookImport";
+import { bookImportPrompt, importBookFromClipboard, importBookJson, type BookImportOutcome } from "./bookImport";
 import { ReaderText } from "./ReaderText";
 import { pageAt, paginate, spreadStart, toggleBookmark, type ReadingPage } from "./readingPagination";
 import * as storage from "./storage";
@@ -109,15 +109,11 @@ export function Bookshelf({ library, api, language, notify }: { library: Reading
     const marks = library.position(book.id).bookmarks.length;
     return `${page + 1} / ${pages.length}페이지${marks ? ` · 책갈피 ${marks}개` : ""}`;
   };
-  const actions: DropdownAction[] = [
-    { key: "prompt", title: "프롬프트 복사", testID: "copy-book-prompt", onPress: () => { void Clipboard.setStringAsync(bookImportPrompt(language)).then(() => notify("책 프롬프트 복사 완료"), cause => notify(String(cause), "error")); } },
-    { key: "add", title: "책 추가", testID: "add-book", onPress: () => setImporting(null) },
-  ];
   if (library.books === null) return library.error ? <Card title="책장"><T tone="error">{library.error}</T><Btn title="다시 불러오기" onPress={() => void library.reload()} /></Card> : <Loading />;
   return <>
     <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
       <T size={phone ? 18 : 21.6} serif weight="700" style={{ flex: 1 }}>책장</T>
-      {phone ? <ActionDropdown actions={actions} accessibilityLabel="책장 작업 메뉴" /> : <View style={{ flexDirection: "row", gap: 8 }}>{actions.map(item => <Btn key={item.key} title={item.title} onPress={item.onPress} testID={item.testID} />)}</View>}
+      <Btn title="책 추가" onPress={() => setImporting(null)} testID="add-book" />
     </View>
     {!!library.error && <T tone="error">{library.error}</T>}
     {last && <Card title="마지막에 읽던 책">
@@ -128,7 +124,7 @@ export function Bookshelf({ library, api, language, notify }: { library: Reading
       </Pressable>
     </Card>}
     <Card title="책 목록" hint={`${books.length}권`}>
-      {books.length === 0 ? <Empty>아직 책이 없습니다. 프롬프트를 복사해 책 JSON을 만든 뒤 책 추가로 넣으세요.</Empty> : <View style={{ gap: 8 }}>
+      {books.length === 0 ? <Empty>아직 책이 없습니다. 책 추가에서 프롬프트를 복사한 뒤 AI가 만든 JSON을 넣으세요.</Empty> : <View style={{ gap: 8 }}>
         {books.map(book => <Pressable key={book.id} accessibilityRole="button" accessibilityLabel={`${book.title} 읽기`} onPress={() => library.open(book.id)}
           style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 10, padding: 14, borderRadius: 12, borderWidth: 1, borderColor: book.id === last?.id ? c.accentLine : c.border, backgroundColor: pressed ? c.soft : c.raised })}>
           <View style={{ flex: 1, minWidth: 0, gap: 3 }}><T size={15.2} serif weight="700" numberOfLines={1}>{book.title}</T><T size={12} tone="dim">{progress(book)}</T></View>
@@ -163,18 +159,13 @@ export function ReaderScreen({ library, api, language, notify, onNoteSaved }: { 
     if (Platform.OS !== "web") return;
     const onKey = (event: KeyboardEvent) => {
       const node = event.target as HTMLElement | null;
-      if (word || importing || marks || (node && ["INPUT", "TEXTAREA", "SELECT"].includes(node.tagName))) return;
+      if (word || importing || editing || marks || (node && ["INPUT", "TEXTAREA", "SELECT"].includes(node.tagName))) return;
       if (event.key === "ArrowLeft" && canPrev) { event.preventDefault(); go(first - spread); }
       if (event.key === "ArrowRight" && canNext) { event.preventDefault(); go(first + spread); }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   });
-  const actions: DropdownAction[] = [
-    { key: "prompt", title: "프롬프트 복사", onPress: () => { void Clipboard.setStringAsync(bookImportPrompt(language)).then(() => notify("책 프롬프트 복사 완료"), cause => notify(String(cause), "error")); } },
-    { key: "append", title: "내용 추가", testID: "append-book", onPress: () => setImporting(true) },
-    { key: "edit", title: "편집", testID: "edit-book", onPress: () => setEditing(true) },
-  ];
   const fontSize = language === "ja" ? (phone ? 19 : 20) : (phone ? 18 : 19);
   const pageView = (page: ReadingPage | undefined, number: number) => <View key={number} style={{ flex: 1, minWidth: 0, padding: phone ? 18 : 26, borderRadius: 14, borderWidth: 1, borderColor: c.borderSoft, backgroundColor: c.panel, gap: 14 }}>
     <View style={{ flex: 1 }}>{page ? <ReaderText color={c.text} accent={c.accent} font={fonts.serif} size={fontSize} tokens={page.tokens} onWord={setWord} /> : <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}><T tone="dim">마지막 페이지입니다.</T></View>}</View>
@@ -187,7 +178,8 @@ export function ReaderScreen({ library, api, language, notify, onNoteSaved }: { 
       <View style={{ flex: 1, minWidth: 0, maxWidth: 420 }}><BookSelect label="책" hideLabel books={books.map(entry => ({ id: entry.id, title: entry.title }))} value={book?.id ?? ""} onChange={library.open} /></View>
       {!phone && <View style={{ flex: 1 }} />}
       {!phone && pages.length > 1 && <Segment options={[{ key: 1, label: "1페이지" }, { key: 2, label: "2페이지" }]} value={library.spread} onChange={value => library.setSpread(value as 1 | 2)} />}
-      {phone ? <ActionDropdown actions={actions} accessibilityLabel="책 작업 메뉴" /> : actions.map(item => <Btn key={item.key} title={item.title} onPress={item.onPress} testID={item.testID} />)}
+      <Btn title="내용 추가" onPress={() => setImporting(true)} testID="append-book" />
+      <ActionDropdown label="⋯" accessibilityLabel="책 더보기 메뉴" testID="reader-more-menu" actions={[{ key: "edit", title: "편집", testID: "edit-book", onPress: () => setEditing(true) }]} />
     </View>
     {!book ? (library.books === null ? <Loading /> : <View style={{ padding: 20 }}><Empty>책을 찾을 수 없습니다.</Empty></View>) :
       <ScrollView key={first} style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1, padding: phone ? 12 : 20, width: "100%", maxWidth: spread === 2 ? 1320 : 820, alignSelf: "center" }}>
@@ -221,36 +213,73 @@ export function BookImporter({ api, language, books, targetId, notify, onClose, 
 }) {
   const c = useContext(Theme);
   const [text, setText] = useState("");
+  const [manualOpen, setManualOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [status, setStatus] = useState("");
-  const target = books.find(book => book.id === targetId);
-  const submit = async () => {
+  const knownBooksRef = useRef<LibraryBook[]>(books);
+  useEffect(() => {
+    const merged = [...books];
+    for (const entry of knownBooksRef.current) {
+      if (!merged.some(book => book.id === entry.id)) merged.push(entry);
+    }
+    knownBooksRef.current = merged;
+  }, [books]);
+  const target = knownBooksRef.current.find(book => book.id === targetId) ?? books.find(book => book.id === targetId);
+  const deps = () => ({
+    books: knownBooksRef.current,
+    targetId,
+    saveBook: async (title: string, body: string) => (await api<{ book: LibraryBook }>("library/save", { kind: "book", title, body, words: [] })).book,
+    appendBook: async (id: string, body: string) => (await api<{ book: LibraryBook }>("library/append", { id, body })).book,
+  });
+  const applyOutcome = (outcome: BookImportOutcome<LibraryBook>) => {
+    if (outcome.ok) {
+      knownBooksRef.current = knownBooksRef.current.some(book => book.id === outcome.book.id)
+        ? knownBooksRef.current.map(book => (book.id === outcome.book.id ? outcome.book : book))
+        : [...knownBooksRef.current, outcome.book];
+      setText("");
+      setStatus(outcome.status);
+      onSaved(outcome.book);
+      return;
+    }
+    setError(outcome.error);
+    setText(outcome.text);
+    if (outcome.openManual) setManualOpen(true);
+  };
+  const submitClipboard = async () => {
     if (busy) return;
     setBusy(true); setError(""); setStatus("");
     try {
-      const parsed = parseBookImport(text);
-      const existing = target ?? books.find(book => book.title.trim() === parsed.title);
-      const result = existing ? await api<{ book: LibraryBook }>("library/append", { id: existing.id, body: parsed.body }) : await api<{ book: LibraryBook }>("library/save", { kind: "book", title: parsed.title, body: parsed.body, words: [] });
-      setText("");
-      setStatus(existing ? `「${result.book.title}」 뒤에 이어 붙였습니다. 다음 페이지 JSON을 계속 넣을 수 있습니다.` : `「${result.book.title}」을(를) 책장에 추가했습니다. 다음 페이지 JSON을 넣으면 이어 붙습니다.`);
-      onSaved(result.book);
-    } catch (cause) { setError(errorText(cause, "책을 저장하지 못했습니다.")); }
-    finally { setBusy(false); }
+      applyOutcome(await importBookFromClipboard(() => Clipboard.getStringAsync(), text, deps()));
+    } finally {
+      setBusy(false);
+    }
+  };
+  const submitManual = async () => {
+    if (busy) return;
+    setBusy(true); setError(""); setStatus("");
+    try {
+      applyOutcome(await importBookJson(text, deps()));
+    } finally {
+      setBusy(false);
+    }
   };
   return <Sheet title={target ? `${target.title} · 내용 추가` : "책 추가"} onClose={() => { if (!busy) onClose(); }}>
-    <T size={13} tone="muted">1. 프롬프트를 복사해 외부 AI에 보냅니다. 2. 책 페이지를 보냅니다. 3. AI가 출력한 JSON을 붙여 넣습니다. 같은 책 이름이면 뒤에 이어 붙으므로 한 페이지씩 계속 넣을 수 있습니다.</T>
+    <T size={13} tone="muted">외부 AI에 책 페이지 사진을 첨부하거나 본문 텍스트를 붙여 넣으세요. AI가 출력한 JSON을 복사한 뒤 클립보드에서 추가를 누르세요.</T>
     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-      <Btn title="프롬프트 복사" onPress={() => void Clipboard.setStringAsync(bookImportPrompt(language)).then(() => notify("책 프롬프트 복사 완료"), cause => setError(String(cause)))} />
-      <Btn title="클립보드에서 붙여넣기" onPress={() => void Clipboard.getStringAsync().then(setText, cause => setError(String(cause)))} />
+      <Btn title="프롬프트 복사" disabled={busy} onPress={() => void Clipboard.setStringAsync(bookImportPrompt(language)).then(() => notify("책 프롬프트 복사 완료"), cause => setError(errorText(cause, "프롬프트를 복사하지 못했습니다.")))} testID="copy-book-prompt" />
+      <Btn variant="primary" title={busy ? "저장 중…" : "클립보드에서 추가"} disabled={busy} onPress={() => void submitClipboard()} testID="import-book-clipboard" />
+      <Btn title="JSON 직접 입력" selected={manualOpen} disabled={busy} onPress={() => setManualOpen(open => !open)} testID="toggle-book-manual" />
+      <Btn title="닫기" disabled={busy} onPress={onClose} testID="close-book-import" />
     </View>
-    <Input multiline label="책 JSON" placeholder='{ "title": "책 이름", "body": "본문" }' value={text} onChangeText={value => { setText(value); setStatus(""); }} testID="book-json-input" />
+    {manualOpen && <View style={{ gap: 10 }}>
+      <Input multiline label="책 JSON" placeholder='{ "title": "책 이름", "body": "본문" }' value={text} onChangeText={value => { setText(value); setStatus(""); }} testID="book-json-input" />
+      <View style={{ flexDirection: "row", gap: 8 }}>
+        <Btn variant="primary" title={busy ? "저장 중…" : "추가"} disabled={busy || !text.trim()} onPress={() => void submitManual()} testID="book-json-submit" />
+      </View>
+    </View>}
     {!!error && <T tone="error">{error}</T>}
     {!!status && <View style={{ padding: 10, borderRadius: 10, borderWidth: 1, borderColor: c.goodLine, backgroundColor: c.goodSoft }}><T size={13} tone="good">{status}</T></View>}
-    <View style={{ flexDirection: "row", gap: 8 }}>
-      <Btn variant="primary" title={busy ? "저장 중…" : target ? "이어 붙이기" : "추가"} disabled={busy || !text.trim()} onPress={() => void submit()} testID="book-json-submit" />
-      <Btn title="닫기" disabled={busy} onPress={onClose} />
-    </View>
   </Sheet>;
 }
 

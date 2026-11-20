@@ -38,10 +38,12 @@ export function computeDropdownPosition(
 }
 
 /** Single trigger button that opens an animated dropdown menu of actions on mobile. */
-export function ActionDropdown({ label = "메뉴", accessibilityLabel = "교재 작업 메뉴", actions }: {
+export function ActionDropdown({ label = "메뉴", accessibilityLabel = "교재 작업 메뉴", actions, disabled = false, testID = "material-actions-trigger" }: {
   label?: string;
   accessibilityLabel?: string;
   actions: readonly DropdownAction[];
+  disabled?: boolean;
+  testID?: string;
 }) {
   const c = useContext(Theme);
   const { width: viewportWidth, height: viewportHeight } = useWindowDimensions();
@@ -53,6 +55,8 @@ export function ActionDropdown({ label = "메뉴", accessibilityLabel = "교재 
   const [hoverTrigger, setHoverTrigger] = useState(false);
   const [hoveredKey, setHoveredKey] = useState<string | null>(null);
   const closingRef = useRef(false);
+  const hideChevron = label === "⋯";
+  const unavailable = disabled || actions.length === 0;
 
   useEffect(() => {
     let active = true;
@@ -92,7 +96,7 @@ export function ActionDropdown({ label = "메뉴", accessibilityLabel = "교재 
   }, [closeMenu, open]);
 
   const openMenu = () => {
-    if (open || actions.length === 0) return;
+    if (open || unavailable) return;
     const present = (rect: AnchorRect | null) => {
       setAnchor(rect);
       closingRef.current = false;
@@ -125,15 +129,15 @@ export function ActionDropdown({ label = "메뉴", accessibilityLabel = "교재 
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={accessibilityLabel}
-          accessibilityState={{ expanded: open, disabled: actions.length === 0 }}
-          disabled={actions.length === 0}
+          accessibilityState={{ expanded: open, disabled: unavailable }}
+          disabled={unavailable}
           onPress={() => (open ? closeMenu() : openMenu())}
           onHoverIn={() => setHoverTrigger(true)}
           onHoverOut={() => setHoverTrigger(false)}
-          testID="material-actions-trigger"
+          testID={testID}
           style={({ pressed }) => ({
             minHeight: 44,
-            paddingHorizontal: 14,
+            paddingHorizontal: hideChevron ? 12 : 14,
             borderRadius: 10,
             borderWidth: 1,
             borderColor: open || hoverTrigger ? c.accentLine : c.border,
@@ -142,11 +146,11 @@ export function ActionDropdown({ label = "메뉴", accessibilityLabel = "교재 
             alignItems: "center",
             justifyContent: "center",
             gap: 6,
-            opacity: actions.length === 0 ? 0.5 : pressed ? 0.8 : 1,
+            opacity: unavailable ? 0.5 : pressed ? 0.8 : 1,
           })}
         >
           <T size={13.6} weight="600" style={{ color: open ? c.accentStrong : c.text }}>{label}</T>
-          <T size={12} style={{ color: open ? c.accentStrong : c.muted }}>{open ? "▴" : "▾"}</T>
+          {!hideChevron && <T size={12} style={{ color: open ? c.accentStrong : c.muted }}>{open ? "▴" : "▾"}</T>}
         </Pressable>
       </View>
 
