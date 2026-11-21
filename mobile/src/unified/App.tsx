@@ -3,7 +3,7 @@ import { clearSnapshot, readSnapshot, saveSnapshot } from "./studySnapshot";
 import type { Clock } from "../client";
 import { useCompanionReady } from "./useCompanionReady";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { AppState, Linking, Platform, Text, useWindowDimensions, View } from "react-native";
+import { AppState, Linking, Platform, Pressable, Text, useWindowDimensions, View, type ViewStyle } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { ApiError, type User } from "../client";
@@ -123,13 +123,62 @@ export function JapaneseCompanionApp({ host }: { host?: CompanionHost } = {}) {
     setGate({ kind: "login" });
   });
   const inner = <View style={[{ flex: 1, backgroundColor: palettes.dark.bg }, gradient(`radial-gradient(900px 480px at 85% -10%, ${palettes.dark.glow}, transparent 70%)`)]}>{hostActive && <StatusBar style="light" />}
-    {gate.kind !== "ready" && <>{hostActive && <BrowserTheme scheme="dark" />}<Notices /></>}
+    {gate.kind !== "ready" && hostActive && <BrowserTheme scheme="dark" />}
     {gate.kind === "checking" && <>{busy || !error ? <StudySkeleton /> : <View style={layout.body}><Label error>{error}</Label><Action title="다시 불러오기" onPress={() => void action(async () => enter()).catch(() => undefined)} /></View>}</>}
     {gate.kind === "login" && <LoginScreen name="Japanese Companion" busy={busy} error={error} remember={remember} onRememberChange={setRemember} onLogin={(username, password) => void action(async () => enter(await client.login(username, password, remember))).catch(() => undefined)} onDevLogin={__DEV__ ? () => void action(async () => enter(await client.devLogin())).catch(() => undefined) : undefined}><GoogleButton client={client} remember={remember} disabled={busy} onBusyChange={setBusy} onLoggedIn={(user) => action(() => enter(user))} /></LoginScreen>}
     {gate.kind === "password" && <PasswordScreen busy={busy} error={error} onSave={(a, b) => void action(async () => { await client.changePassword(a, b); await enter(); }).catch(() => undefined)} onLogout={() => void logout().catch(() => undefined)} />}
     {gate.kind === "blocked" && <View style={layout.body}><Label error>{error}</Label><Action title="메인 페이지" onPress={() => void Linking.openURL(SITE_ORIGIN)} /><Action title="로그아웃" onPress={() => void logout().catch(() => undefined)} /></View>}
-    {gate.kind === "ready" && !gate.verified && <Action title="연결 다시 확인" onPress={() => void action(() => enter()).catch(() => undefined)} />}
     {gate.kind === "ready" && <StudyApp key={gate.user.id + ":" + revision} boot={gate.boot} user={gate.user} verified={gate.verified} host={host} onLogout={logout} onReset={() => void action(async () => enter(gate.user)).catch(() => undefined)} />}
+    {gate.kind !== "ready" && <Notices />}
+    {gate.kind === "ready" && !gate.verified && (
+      <View
+        pointerEvents="box-none"
+        style={{ position: "absolute", left: 16, right: 16, bottom: 24, zIndex: 100, elevation: 12, alignItems: "center" }}
+      >
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 10,
+            maxWidth: 460,
+            paddingVertical: 10,
+            paddingHorizontal: 16,
+            borderRadius: 999,
+            borderWidth: 1,
+            borderColor: busy ? palettes.dark.border : palettes.dark.accentLine,
+            backgroundColor: palettes.dark.raised,
+            boxShadow: "0 16px 38px rgba(0, 0, 0, 0.5)",
+          } as ViewStyle}
+        >
+          {busy ? (
+            <Text accessibilityRole="summary" style={{ color: palettes.dark.text, fontSize: 13.5, fontWeight: "600" }}>
+              연결 확인 중...
+            </Text>
+          ) : (
+            <>
+              <Text accessibilityRole="alert" style={{ color: palettes.dark.text, fontSize: 13.5, fontWeight: "600" }}>
+                연결 확인 필요
+              </Text>
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => void action(async () => enter()).catch(() => undefined)}
+                style={({ pressed }) => ({
+                  paddingVertical: 4,
+                  paddingHorizontal: 10,
+                  borderRadius: 999,
+                  backgroundColor: palettes.dark.soft,
+                  borderWidth: 1,
+                  borderColor: palettes.dark.accentLine,
+                  opacity: pressed ? 0.8 : 1,
+                })}
+              >
+                <Text style={{ color: palettes.dark.accentStrong, fontSize: 12.8, fontWeight: "700" }}>다시 확인</Text>
+              </Pressable>
+            </>
+          )}
+        </View>
+      </View>
+    )}
   </View>;
   if (embedded) return inner;
   return <SafeAreaProvider><SafeAreaView style={{ flex: 1, backgroundColor: palettes.dark.bg }}>{inner}</SafeAreaView></SafeAreaProvider>;
@@ -190,13 +239,14 @@ function StudyApp({ boot, user, verified, host, onLogout, onReset }: { boot: Boo
     subPath: tab !== "today" ? tab : undefined,
     onReturn: () => setTab("today"),
   });
-  return <Theme.Provider value={c}><Device.Provider value={{ phone: isPhone }}><View ref={node => { if (Platform.OS === "web" && node instanceof HTMLElement) node.inert = !verified; }} accessibilityElementsHidden={!verified} importantForAccessibility={!verified ? "no-hide-descendants" : "auto"} pointerEvents={!verified ? "none" : "auto"} style={[{ flex: 1, backgroundColor: c.bg }, gradient(`radial-gradient(900px 480px at 85% -10%, ${c.glow}, transparent 70%)`)]}>{hostActive && <BrowserTheme scheme={display.theme} />}{hostActive && <StatusBar style={display.theme === "light" ? "dark" : "light"} />}<Notices /><StudyProgress pending={model.switching} />
+  return <Theme.Provider value={c}><Device.Provider value={{ phone: isPhone }}><View ref={node => { if (Platform.OS === "web" && node instanceof HTMLElement) node.inert = !verified; }} accessibilityElementsHidden={!verified} importantForAccessibility={!verified ? "no-hide-descendants" : "auto"} pointerEvents={!verified ? "none" : "auto"} style={[{ flex: 1, backgroundColor: c.bg }, gradient(`radial-gradient(900px 480px at 85% -10%, ${c.glow}, transparent 70%)`)]}>{hostActive && <BrowserTheme scheme={display.theme} />}{hostActive && <StatusBar style={display.theme === "light" ? "dark" : "light"} />}<StudyProgress pending={model.switching} />
     {model.session ? <SessionScreen key={model.session.unitId + ":" + model.session.dayId} model={model} isPhone={isPhone} notify={notify} /> : library.openId ? <ReaderScreen library={library} api={readingApi} language="ja" notify={notify} onNoteSaved={model.applyMemo} /> : <>
       <Chrome desktop={!isPhone} section={section} onSectionChange={(next) => { changeSection(next); if (tab === "settings") setTab("today"); }} tab={tab} today={today} dueCount={dueCount} onNavigate={setTab} onHome={goHome} onOpenHub={host?.onOpenHub} adSlot={tab !== "settings" ? host?.renderAdSlot?.("japanese-bottom") : undefined}>
         {tab === "settings" ? <SettingsScreen phone={isPhone} model={model} display={display} setDisplay={setDisplay} notify={notify} onLogout={onLogout} onReset={onReset} hideUnifiedAppLink={Boolean(host?.embedded)} /> : <HomeScreen model={model} library={library} section={section} tab={tab} today={today} desktop={!isPhone} notify={notify} />}
       </Chrome>
     </>}
     <CompletionHud completion={model.session ? null : model.completion} today={today} onDone={model.clearCompletion} />
+    <Notices />
     {toast && <Toast text={toast.text} tone={toast.tone} phone={isPhone && !model.session} />}
   </View></Device.Provider></Theme.Provider>;
 }

@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useRef, useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Pressable, Text, View, type ViewStyle } from "react-native";
 import { API_ORIGIN, NOTICE_APP_ID } from "./config";
 import { Theme } from "./ui";
 import { useNoticePreview } from "./useNoticePreview";
@@ -19,7 +19,7 @@ function NoticeToast({ lines, sticky, onClose }: { lines: string[]; sticky: bool
   const c = useContext(Theme);
   const close = useRef(onClose); close.current = onClose;
   useEffect(() => { if (sticky) return; const timer = setTimeout(() => close.current(), 8000); return () => clearTimeout(timer); }, [sticky]);
-  return <View accessibilityRole={sticky ? "alert" : "summary"} style={{ flexDirection: "row", gap: 8, padding: 12, backgroundColor: c.panel, borderColor: c.accent, borderWidth: 1, borderRadius: 10 }}>
+  return <View accessibilityRole={sticky ? "alert" : "summary"} style={{ flexDirection: "row", gap: 8, width: "100%", maxWidth: 480, padding: 12, backgroundColor: c.panel, borderColor: c.accent, borderWidth: 1, borderRadius: 12, boxShadow: "0 12px 32px rgba(0, 0, 0, 0.35)" } as ViewStyle}>
     <View style={{ flex: 1, gap: 6 }}>{lines.length === 1 ? <Text style={{ color: c.text }}>{lines[0]}</Text> : lines.map((line, index) => <View key={index} style={{ flexDirection: "row", gap: 6 }}><Text style={{ color: c.text }}>·</Text><Text style={{ flex: 1, color: c.text }}>{line}</Text></View>)}</View>
     <Pressable accessibilityRole="button" accessibilityLabel="공지 닫기" onPress={onClose}><Text style={{ color: c.text }}>×</Text></Pressable>
   </View>;
@@ -36,5 +36,5 @@ export function Notices() {
   // 공지가 여러 개여도 쌓지 않고 토스트 하나에 담는다. 목록이 바뀌면 다시 보여 준다
   const id = entries.map((entry) => entry.id).join(",");
   if (!entries.length || closed.includes(id)) return null;
-  return <View style={{ gap: 8 }}><NoticeToast key={`${preview}:${id}`} lines={entries.map((entry) => entry.title)} sticky={!current?.up} onClose={() => setClosed((list) => [...list, id])} /></View>;
+  return <View pointerEvents="box-none" style={{ position: "absolute", top: 12, left: 12, right: 12, zIndex: 95, elevation: 10, alignItems: "center", gap: 8 }}><NoticeToast key={`${preview}:${id}`} lines={entries.map((entry) => entry.title)} sticky={!current?.up} onClose={() => setClosed((list) => [...list, id])} /></View>;
 }
