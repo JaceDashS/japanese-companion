@@ -25,7 +25,11 @@ export default {
       bundleIdentifier: "com.jaces." + app + "companion",
       supportsTablet: true,
     },
-    plugins: ["expo-secure-store", "./plugins/with-short-cmake-path.cjs"],
+    plugins: [
+      "expo-secure-store",
+      "./plugins/with-short-cmake-path.cjs",
+      "./plugins/with-release-signing.cjs",
+    ],
     extra: { companionApp: app, apiOrigin: "https://api.jace-s.com" },
   },
 };
