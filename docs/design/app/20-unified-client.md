@@ -2,7 +2,7 @@
 
 - Spec: [Unified Client](../../specs/app/20-unified-client.md)
 - Architecture: [Overview](../../architecture/10-overview.md)
-- Scenarios: [Unified Client](../../testing/scenarios/app/20-unified-client.md)
+- Scenarios: [Unified Client](../../testing/test-cases/app/20-unified-client.md)
 
 ## Platform Session
 - Input: API origin, product key, session store and fetch implementation.

@@ -24,7 +24,7 @@ flowchart LR
 - Expected result: The same URL opens account curriculum using response CSRF for later writes.
 - Spec: [Google Sign In](../../specs/auth/50-google-sign-in.md)
 - Architecture: [Overview](../../architecture/10-overview.md)
-- Scenarios: [Google Sign In](../../testing/scenarios/auth/50-google-sign-in.md)
+- Scenarios: [Google Sign In](../../testing/test-cases/auth/50-google-sign-in.md)
 
 ## Native Google Implementation
 
@@ -36,7 +36,7 @@ flowchart LR
 - Representative scenario input: Picker cancellation followed by retry. Steps: Cancel once and open again. Expected result: No first exchange and a new nonce for the second attempt.
 - Spec: [Companion requirements](../../specs/auth/50-google-sign-in.md#android-google-account-picker)
 - Architecture: [Overview](../../architecture/10-overview.md)
-- Scenarios: [Authentication cases](../../testing/scenarios/auth/50-google-sign-in.md#native-google-contracts)
+- Scenarios: [Authentication cases](../../testing/test-cases/auth/50-google-sign-in.md#native-google-contracts)
 
 ```mermaid
 flowchart LR

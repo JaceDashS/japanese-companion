@@ -2,7 +2,7 @@
 
 - Spec: [Responsive Layout](../../specs/app/30-responsive-layout.md)
 - Architecture: [Overview](../../architecture/10-overview.md)
-- Scenarios: [Responsive Layout](../../testing/scenarios/app/30-responsive-layout.md)
+- Scenarios: [Responsive Layout](../../testing/test-cases/app/30-responsive-layout.md)
 
 ## Layout Policy
 - Input: `useWindowDimensions()` width and height in logical pixels, and existing manual device preference where supported.
@@ -51,7 +51,7 @@ flowchart LR
 - Output: Mobile-only full-width book selection above today, Day and progress content. Desktop retains the existing Segment and its multiple-book visibility rule.
 - Code: `mobile/src/unified/BookSelect.tsx` exports `BookSelect`. Web renders a native labelled select with 44 pixel minimum height; Android uses the existing themed Sheet with radio options. Empty lists disable selection. Home disables the control while switching and reports existing model errors through notify.
 - Scenario: With two books at 390 pixels, choose the second book. Steps: Select its option, invoke switchBook and load its existing account-scoped state. Expected result: The selected book changes without modifying source addresses or saved progress; PC retains its previous controls.
-- All scenarios: [Mobile Book Dropdown](../../testing/scenarios/app/30-responsive-layout.md#mobile-book-dropdown).
+- All scenarios: [Mobile Book Dropdown](../../testing/test-cases/app/30-responsive-layout.md#mobile-book-dropdown).
 
 ## Browser Control Theme
 - Input: Active palette and explicit dark or light scheme from App.
@@ -60,7 +60,7 @@ flowchart LR
 - Scrollbar thumb uses dim, track uses panel, and hover uses muted. Standard scrollbar properties and WebKit fallback rules cover the supported browser renderers; operating-system popup menus remain browser-managed.
 - BookSelect keeps the actual select element, hides its edge-bound default arrow and paints an encoded theme-colored SVG chevron at right 14px center. Right padding is 40px; native selection sheets are unchanged.
 - Example input: Change dark to light while a long book title is selected. Steps: Re-render BrowserTheme with the current palette. Expected result: Browser control and scrollbar colors update immediately, and the inset arrow leaves room for the title.
-- Scenarios: [Themed Browser Controls](../../testing/scenarios/app/30-responsive-layout.md#themed-browser-controls).
+- Scenarios: [Themed Browser Controls](../../testing/test-cases/app/30-responsive-layout.md#themed-browser-controls).
 
 ## Product Brand Icon
 

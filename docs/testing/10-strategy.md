@@ -12,7 +12,7 @@
 - Steps: Install dependencies, run both type checks and native unit tests.
 - Expected result: No missing source or cross-product import is reported.
 
-- [Scenarios](scenarios/app/10-product-clients.md)
+- [Scenarios](test-cases/app/10-product-clients.md)
 
 ## CI Ownership
 The product CI runs the checks above without a platform checkout. Actual product-API integration remains an optional test in the platform repository and is run separately for each product transport.

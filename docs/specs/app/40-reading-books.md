@@ -1,7 +1,7 @@
 # Reading Books
 
 - Design: [Implementation](../../design/app/40-reading-books.md)
-- Scenarios: [Cases](../../testing/scenarios/app/40-reading-books.md)
+- Scenarios: [Cases](../../testing/test-cases/app/40-reading-books.md)
 
 ## Requirements
 - Distinguish reading books from vocabulary textbooks when adding materials. Existing study textbooks remain vocabulary textbooks.

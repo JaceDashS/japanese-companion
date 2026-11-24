@@ -24,4 +24,4 @@ flowchart LR
 - Expected result: Account details are no longer mounted and the browser session is signed out across apps.
 - Spec: [Account Card](../../specs/auth/60-account-card.md#account-details)
 - Architecture: [Overview](../../architecture/10-overview.md)
-- Scenarios: [Account Card Scenarios](../../testing/scenarios/auth/60-account-card.md#account-card-scenarios)
+- Scenarios: [Account Card Scenarios](../../testing/test-cases/auth/60-account-card.md#account-card-scenarios)

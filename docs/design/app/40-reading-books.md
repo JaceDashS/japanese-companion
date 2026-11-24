@@ -2,7 +2,7 @@
 
 - Spec: [Requirements](../../specs/app/40-reading-books.md)
 - Architecture: [Overview](../../architecture/10-overview.md)
-- Scenarios: [Cases](../../testing/scenarios/app/40-reading-books.md)
+- Scenarios: [Cases](../../testing/test-cases/app/40-reading-books.md)
 
 ## Storage And Lookup
 - Input: Account identity, product, material type, title, prose, vocabulary and selected word.

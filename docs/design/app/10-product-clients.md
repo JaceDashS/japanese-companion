@@ -9,7 +9,7 @@
 - The native study adapter normalizes only this product's curriculum and creates the same API payload as before. Generic mobile UI and transport are owned by each product copy; changes shared between products must be applied and tested in both repositories.
 - Spec: [Product Clients](../../specs/app/10-product-clients.md)
 - Architecture: [Overview](../../architecture/10-overview.md)
-- Scenarios: [Product Clients](../../testing/scenarios/app/10-product-clients.md)
+- Scenarios: [Product Clients](../../testing/test-cases/app/10-product-clients.md)
 
 ## Public Modules
 The shared modules expose the following identifiers. Generated adapters preserve the existing controller contracts for both web and Android. Scheduling helpers consume a YYYY-MM-DD date and preserve existing stage and retry calculations; parsers preserve original item addresses and order; public types define the same curriculum and session models.
@@ -57,14 +57,14 @@ The shared modules expose the following identifiers. Generated adapters preserve
 - Steps: The keyed component remounts whenever the current item changes, so React discards the previous text.
 - Scenario: Type a note on question 3, move to question 4 → the field is empty.
 - Spec: [Quiz Scratch Memo](../../specs/app/10-product-clients.md#quiz-scratch-memo)
-- All scenarios: [Quiz Scratch Memo Scenarios](../../testing/scenarios/app/10-product-clients.md#quiz-scratch-memo-scenarios)
+- All scenarios: [Quiz Scratch Memo Scenarios](../../testing/test-cases/app/10-product-clients.md#quiz-scratch-memo-scenarios)
 
 ## Book Display Names
 - Input: asset/jlpt-one-book-n1.json and asset/jlpt-short-term.json combined metadata.
 - Output: Titles n1 and n2 from getAvailableBooks in shared/data/initialState.ts, re-exported through shared/controllers/domain/curriculumFiles.ts.
 - Only meta.title changes; filenames, levels, Unit and item data remain unchanged. Hosted source has matching metadata in the platform repository.
 - Example input: Existing jlpt-one-book-n1 account state. Steps: Read renamed metadata. Expected result: n1 is displayed without changing its state key.
-- Scenarios: [Book Display Names](../../testing/scenarios/app/10-product-clients.md#book-display-names).
+- Scenarios: [Book Display Names](../../testing/test-cases/app/10-product-clients.md#book-display-names).
 
 ## Production Book Catalog
 - Input: The remaining asset/jlpt-one-book-n1.json and asset/jlpt-short-term.json combined sources.
@@ -72,4 +72,4 @@ The shared modules expose the following identifiers. Generated adapters preserve
 - Code: scripts/audit-missing-problems.cjs, scripts/audit-fix-problem-answers.cjs, scripts/audit-duplicate-problem-answers.cjs and scripts/repair-kanji-decomposition-problems.cjs default only to those two files after removing the retired source. Audit and repair behavior is otherwise unchanged.
 - mobile/src/unified/useStudyModel.ts loadStudy already falls back to n1 if a remembered selectedBookId is absent from the new catalog. No account record is deleted or rewritten for removal.
 - Example input: Run a default content audit after removing the test source. Steps: Resolve its default filenames. Expected result: Both production sources exist and the removed test file is never opened.
-- Scenarios: [Production Book Catalog](../../testing/scenarios/app/10-product-clients.md#production-book-catalog).
+- Scenarios: [Production Book Catalog](../../testing/test-cases/app/10-product-clients.md#production-book-catalog).
